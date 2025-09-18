@@ -1,19 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-// tolerant import for Card — falls back to minimal local components when the real Card
-// export is missing or causes runtime issues. This avoids crashes while you debug the
-// real UI library. Remove / simplify once the original Card module is fixed.
 import * as CardModule from '@/components/ui/card';
 const Card = CardModule.Card || CardModule.default || (({ children, className = '' }: any) => <div className={className}>{children}</div>);
 const CardHeader = CardModule.CardHeader || (({ children, className = '' }: any) => <div className={className}>{children}</div>);
 const CardContent = CardModule.CardContent || (({ children, className = '' }: any) => <div className={className}>{children}</div>);
 import { useTranslation } from '@/hooks/useTranslation';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
-import {askCropQuestion} from '@/lib/gemini';
+// --- UPDATED IMPORTS ---
+import { askCropQuestion, clearConversationHistory} from '@/lib/gemini';
 import { MessageCircle, X, Mic, Send, Bot, User } from 'lucide-react';
-//import { askCropQuestion } from '@/lib/gemini';
-
 
 interface Message {
   id: string;
@@ -82,24 +78,16 @@ export default function ChatBot() {
     setIsLoading(true);
 
     try {
-      // right before calling
-console.log('[ChatBot] sending question:', message);
-console.log('[ChatBot] typeof askCropQuestion =', typeof askCropQuestion);
-const response = await askCropQuestion(message);
-console.log('[ChatBot] typeof askCropQuestion =', typeof askCropQuestion);
-
-
-// const response = await askCropQuestion(message);
-
-const botMessage: Message = {
-  id: (Date.now() + 1).toString(),
-  text: response,
-  isUser: false,
-  timestamp: new Date(),
-};
-console.log('[ChatBot] got response:', response);
+      console.log('[ChatBot] sending question:', message);
+      const response = await askCropQuestion(message);
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: response,
+        isUser: false,
+        timestamp: new Date(),
+      };
+      console.log('[ChatBot] got response:', response);
       setMessages(prev => [...prev, botMessage]);
-    // in ChatBot sendMessage catch
     } catch (error: any) {
       const errorText = error?.message || "I'm having trouble connecting right now. Please try again later.";
       const errorMessage: Message = {
@@ -129,89 +117,109 @@ console.log('[ChatBot] got response:', response);
     t('quick_weather'),
   ];
 
-  // UI improvements summary (in-code):
-  // - Panel is slightly wider on larger screens and responsive on small screens
-  // - Message list has a stable max-height with proper padding-bottom so input won't overlap
-  // - Fixed alignment and spacing for avatars + bubbles
-  // - Use onKeyDown instead of deprecated onKeyPress
-  // - Added aria labels for accessibility
+  const handleClearHistory = async () => {
+    try {
+      await clearConversationHistory();
+      setMessages([{
+        id: '1',
+        text: t('chat_greeting'),
+        isUser: false,
+        timestamp: new Date(),
+      }]);
+    } catch (err) {
+      console.error('Failed to clear history:', err);
+    }
+  };
+
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      {/* Toggle button */}
       <Button
         onClick={() => setIsOpen(prev => !prev)}
-        className="w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 chat-bounce bg-primary hover:bg-primary/90"
+        className="w-16 h-16 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 chat-bounce bg-primary hover:bg-primary/90"
         aria-expanded={isOpen}
         aria-controls="chat-panel"
         data-testid="button-chat-toggle"
       >
-        {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+        {isOpen ? <X className="h-7 w-7" /> : <MessageCircle className="h-7 w-7" />}
       </Button>
 
       {isOpen && (
-        <Card id="chat-panel" className="absolute bottom-16 right-0 w-80 sm:w-96 h-[420px] shadow-2xl">
-          <CardHeader className="gradient-bg text-white p-4">
+        <Card id="chat-panel" className="absolute bottom-20 right-0 w-96 sm:w-[480px] lg:w-[520px] h-[600px] shadow-2xl">
+          <CardHeader className="gradient-bg text-white p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                  <Bot className="text-primary h-4 w-4" />
+                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                  <Bot className="text-primary h-5 w-5" />
                 </div>
                 <div>
-                  <p className="font-medium">{t('crop_assistant')}</p>
-                  <p className="text-xs opacity-75">{t('ai_powered')}</p>
+                  <p className="font-medium text-lg">{t('crop_assistant')}</p>
+                  <p className="text-sm opacity-75">{t('ai_powered')}</p>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsOpen(false)}
-                className="text-white hover:bg-white/20"
-                aria-label={t('close') || 'Close chat'}
-                data-testid="button-chat-close"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+
+              <div className="flex items-center space-x-2">
+
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleClearHistory}
+                  className="text-white hover:bg-white/10 p-2"
+                  aria-label={t('clear_history') || 'Clear history'}
+                  data-testid="button-clear-history"
+                  disabled={isLoading}
+                >
+                  {t('clear_history')}
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsOpen(false)}
+                  className="text-white hover:bg-white/20 p-2"
+                  aria-label={t('close') || 'Close chat'}
+                  data-testid="button-chat-close"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           </CardHeader>
 
           <CardContent className="p-0 flex flex-col h-full">
-            {/* Messages container */}
             <div
               role="log"
               aria-live="polite"
-              className="flex-1 p-3 overflow-y-auto space-y-3"
-              style={{ paddingBottom: '12px' }}
+              className="flex-1 p-4 overflow-y-auto space-y-4"
+              style={{ paddingBottom: '16px' }}
             >
               {messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex items-end ${message.isUser ? 'justify-end' : 'justify-start'}`}
                 >
-                  {/* left avatar for bot */}
                   {!message.isUser && (
-                    <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mr-2">
-                      <Bot className="text-primary-foreground h-4 w-4" />
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mr-3">
+                      <Bot className="text-primary-foreground h-5 w-5" />
                     </div>
                   )}
 
                   <div
-                    className={`p-3 rounded-lg max-w-[70%] break-words text-sm shadow-sm ${
+                    className={`p-4 rounded-xl max-w-[75%] break-words text-sm leading-relaxed shadow-sm ${
                       message.isUser
-                        ? 'bg-primary text-primary-foreground ml-2'
-                        : 'bg-muted/50 text-foreground mr-2'
+                        ? 'bg-primary text-primary-foreground ml-3 rounded-br-md'
+                        : 'bg-muted/50 text-foreground mr-3 rounded-bl-md'
                     }`}
                   >
                     {message.text}
-                    <div className="text-[10px] opacity-60 mt-1 text-right">
+                    <div className="text-xs opacity-60 mt-2 text-right">
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
 
-                  {/* right avatar for user */}
                   {message.isUser && (
-                    <div className="w-7 h-7 bg-accent rounded-full flex items-center justify-center flex-shrink-0 ml-2">
-                      <User className="text-accent-foreground h-4 w-4" />
+                    <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center flex-shrink-0 ml-3">
+                      <User className="text-accent-foreground h-5 w-5" />
                     </div>
                   )}
                 </div>
@@ -219,10 +227,10 @@ console.log('[ChatBot] got response:', response);
 
               {isLoading && (
                 <div className="flex items-start">
-                  <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mr-2">
-                    <Bot className="text-primary-foreground h-4 w-4" />
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mr-3">
+                    <Bot className="text-primary-foreground h-5 w-5" />
                   </div>
-                  <div className="bg-muted/50 p-3 rounded-lg">
+                  <div className="bg-muted/50 p-4 rounded-xl rounded-bl-md">
                     <div className="flex space-x-1">
                       <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
                       <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
@@ -235,14 +243,12 @@ console.log('[ChatBot] got response:', response);
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input area */}
-            <div className="p-4 border-t border-border bg-background">
-              <div className="flex items-center space-x-2">
-                {/* Language selector */}
+            <div className="p-5 border-t border-border bg-background">
+              <div className="flex items-center space-x-3 mb-3">
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
-                  className="text-xs p-1 rounded border bg-white"
+                  className="text-sm p-2 rounded-lg border bg-white min-w-[140px]"
                   aria-label="Select language"
                   data-testid="select-language"
                 >
@@ -255,11 +261,11 @@ console.log('[ChatBot] got response:', response);
                   size="sm"
                   variant={isRecording ? 'destructive' : 'outline'}
                   onClick={isRecording ? stopRecording : startRecording}
-                  className={isRecording ? 'voice-recording' : ''}
+                  className={`${isRecording ? 'voice-recording' : ''} p-3`}
                   aria-pressed={isRecording}
                   data-testid="button-voice-input"
                 >
-                  <Mic className="h-4 w-4" />
+                  <Mic className="h-5 w-5" />
                 </Button>
 
                 <Input
@@ -267,7 +273,7 @@ console.log('[ChatBot] got response:', response);
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="flex-1"
+                  className="flex-1 h-11 text-sm"
                   aria-label={t('chat_input') || 'Chat input'}
                   data-testid="input-chat-message"
                 />
@@ -276,20 +282,21 @@ console.log('[ChatBot] got response:', response);
                   size="sm"
                   onClick={handleSend}
                   disabled={!inputMessage.trim() || isLoading}
+                  className="p-3"
                   data-testid="button-send-message"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-5 w-5" />
                 </Button>
               </div>
 
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
                 {quickQuestions.map((question, index) => (
                   <Button
                     key={index}
                     variant="outline"
                     size="sm"
                     onClick={() => sendMessage(question)}
-                    className="text-xs"
+                    className="text-sm px-3 py-2 h-auto whitespace-normal text-left"
                     data-testid={`button-quick-question-${index}`}
                   >
                     {question}

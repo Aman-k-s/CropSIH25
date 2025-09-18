@@ -64,6 +64,7 @@ export const translations = {
     quick_crop_health: "Crop health?",
     quick_fertilizer: "Fertilizer needed?",
     quick_weather: "Weather update?",
+    clear_history: "New",
   },
   hi: {
     // Navigation
@@ -130,6 +131,7 @@ export const translations = {
     quick_crop_health: "फसल स्वास्थ्य?",
     quick_fertilizer: "उर्वरक की आवश्यकता?",
     quick_weather: "मौसम अपडेट?",
+    clear_history: "नई बातचीत",
   },
   pa: {
     // Navigation
@@ -196,6 +198,7 @@ export const translations = {
     quick_crop_health: "ਫਸਲ ਸਿਹਤ?",
     quick_fertilizer: "ਖਾਦ ਦੀ ਲੋੜ?",
     quick_weather: "ਮੌਸਮ ਅਪਡੇਟ?",
+    clear_history: "ਨਵੀਂ ਗੱਲਬਾਤ",
   }
 };
 

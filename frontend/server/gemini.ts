@@ -2,10 +2,29 @@
 import { Router } from 'express';
 const router = Router();
 
+// In-memory storage for conversation history (use Redis/database in production)
+const conversationHistory = new Map<string, Array<{role: 'user' | 'model', text: string, timestamp: number}>>();
+
+// Clean up old conversations (run periodically)
+const cleanupOldConversations = () => {
+  const oneHourAgo = Date.now() - (60 * 60 * 1000);
+  for (const [sessionId, messages] of conversationHistory.entries()) {
+    if (messages.length === 0 || messages[messages.length - 1].timestamp < oneHourAgo) {
+      conversationHistory.delete(sessionId);
+    }
+  }
+};
+
+// Clean up every 30 minutes
+setInterval(cleanupOldConversations, 30 * 60 * 1000);
+
 router.post('/a', async (req, res) => {
   try {
-    const { question } = req.body;
+    const { question, sessionId, clearHistory = false } = req.body;
     if (!question) return res.status(400).json({ error: 'Missing question' });
+    
+    // Use provided sessionId or generate one
+    const currentSessionId = sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
     if (!GEMINI_KEY) {
@@ -13,26 +32,111 @@ router.post('/a', async (req, res) => {
       return res.status(500).json({ error: 'Missing GEMINI_API_KEY on server' });
     }
 
+    // Clear history if requested
+    if (clearHistory) {
+      conversationHistory.delete(currentSessionId);
+    }
+
+    // Get or initialize conversation history
+    let history = conversationHistory.get(currentSessionId) || [];
+    
+    // Limit history to last 10 exchanges (20 messages) to stay within token limits
+    const maxMessages = 20;
+    if (history.length > maxMessages) {
+      history = history.slice(-maxMessages);
+    }
+
     const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
-    // --- Add system prompt ---
-    const systemPrompt = `
-You are an AI chatbot for farmers. Users can ask any question about fertilizer, crop health, rain, market price, or carbon credits in simple language. 
-Draw from all available data sources and model outputs to answer, clarify, and guide. 
-Each advice card includes a "Why/How" button to trigger detailed explanations, FAQs, and follow-ups. 
-Support voice and text responses in English, Hindi, and Punjabi.
-`;
+    // Build contents array with conversation history
+    const contents = [];
+    
+    // Add conversation history
+    for (const message of history) {
+      contents.push({
+        role: message.role,
+        parts: [{ text: message.text }]
+      });
+    }
+    
+    // Add current user message
+    contents.push({
+      role: 'user',
+      parts: [{ text: question }]
+    });
 
     const payload = {
-      // The system message + user question
-      // Some Gemini APIs support "messages" instead of "contents"; if your API only supports "contents", prepend the system prompt to the text
-      contents: [
-        { parts: [{ text: `${systemPrompt}\n\nQuestion: ${question}` }] }
-      ],
+      systemInstruction: {
+        parts: [
+          {
+            text: `You are an expert agricultural assistant and chatbot specifically designed to help farmers and agricultural professionals. Your primary responsibilities include:
+
+CORE EXPERTISE:
+- Crop management and cultivation techniques
+- Fertilizer recommendations for specific crops and soil conditions
+- Plant disease identification and treatment solutions
+- Pest control strategies (integrated pest management)
+- Soil health assessment and improvement
+- Weather impact on crops and farming decisions
+- Market prices and agricultural economics
+- Carbon credits and sustainable farming practices
+- Irrigation and water management
+- Seasonal planting and harvesting guidance
+
+CONVERSATION CONTEXT:
+- You have access to the conversation history to provide contextual responses
+- Reference previous questions and answers when relevant
+- Build upon earlier discussions to provide more personalized advice
+- If the user mentions "my farm" or "my crops" from earlier messages, remember those details
+
+RESPONSE GUIDELINES:
+- Always respond in the same language the user asks their question in
+- Provide practical, actionable advice that farmers can implement
+- Keep responses concise but comprehensive (aim for 2-4 sentences unless more detail is needed)
+- Use simple, clear language avoiding overly technical jargon
+- When discussing chemicals or treatments, always emphasize safety precautions
+- Prioritize sustainable and environmentally friendly farming methods
+- If you're uncertain about specific regional conditions, ask for location details
+- For market prices, acknowledge that prices vary by location and time
+
+RESPONSE FORMAT:
+- Use plain text with no markdown formatting
+- Structure information clearly with natural paragraph breaks
+- Include specific measurements, timing, or quantities when relevant
+- End with actionable next steps when appropriate
+
+FOCUS AREAS:
+Stay focused on agricultural topics. If asked about non-farming subjects, politely redirect: "I'm specialized in agricultural assistance. Could you ask me something related to farming, crops, or agricultural practices instead?"
+
+Remember: Your goal is to help improve agricultural productivity, sustainability, and farmer success through expert guidance. Use the conversation history to provide more personalized and contextual advice.`
+          }
+        ]
+      },
+      contents: contents,
       generationConfig: {
         maxOutputTokens: 512,
         temperature: 0.2,
+        topP: 0.8,
+        topK: 40
       },
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_HARASSMENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_HATE_SPEECH",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        }
+      ]
     };
 
     const response = await fetch(apiUrl, {
@@ -56,20 +160,60 @@ Support voice and text responses in English, Hindi, and Punjabi.
     try {
       data = JSON.parse(text);
     } catch (e) {
-      data = text;
+      console.error('Failed to parse Gemini response as JSON:', e);
+      return res.status(502).json({ error: 'Invalid response format from Gemini' });
     }
 
+    // Extract the response text
     const reply =
       (data?.candidates?.[0]?.content?.parts?.[0]?.text) ||
       (data?.output?.[0]?.content?.map((c: any) => c?.text || '').join('')) ||
       (data?.text) ||
-      JSON.stringify(data);
+      'Sorry, I could not generate a proper response. Please try again.';
 
-    res.json({ reply });
+    // Update conversation history
+    const currentTime = Date.now();
+    
+    // Add user message to history
+    history.push({
+      role: 'user',
+      text: question,
+      timestamp: currentTime
+    });
+    
+    // Add model response to history
+    history.push({
+      role: 'model',
+      text: reply,
+      timestamp: currentTime
+    });
+    
+    // Save updated history
+    conversationHistory.set(currentSessionId, history);
+
+    res.json({ 
+      reply, 
+      sessionId: currentSessionId,
+      conversationLength: history.length 
+    });
   } catch (err) {
     console.error('/api/a unexpected error:', err);
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+// Optional: Add endpoint to clear conversation history
+router.delete('/a/history/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+  conversationHistory.delete(sessionId);
+  res.json({ message: 'Conversation history cleared' });
+});
+
+// Optional: Add endpoint to get conversation history
+router.get('/a/history/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+  const history = conversationHistory.get(sessionId) || [];
+  res.json({ history, length: history.length });
 });
 
 export default router;
