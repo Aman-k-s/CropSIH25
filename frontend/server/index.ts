@@ -137,7 +137,7 @@ app.use((req, res, next) => {
 
     // --- Start server ---
     const port = parseInt(process.env.PORT || "5000", 10);
-    app.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
+    app.listen({ port, host: "127.0.0.1"}, () => {
       log(`Server running on port ${port}`);
     });
   } catch (err) {
