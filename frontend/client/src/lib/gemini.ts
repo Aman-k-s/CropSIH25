@@ -1,71 +1,61 @@
-// gemini.ts
-/*import { Router } from "express";
-import fetch from "node-fetch";
+// src/lib/gemini.ts (client) — named export, robust logs (dev)
+export async function askCropQuestion(question: string, timeoutMs = 15000) {
+  console.log('[askCropQuestion] called with:', question);
 
-const router = Router();
+  // If you use a dev proxy, leave BASE_URL empty ''. Otherwise set REACT_APP_API_BASE_URL to e.g. http://localhost:5000
+  const BASE_URL = process.env.REACT_APP_API_BASE_URL ?? '';
+  const url = `${BASE_URL}/api/a`;
+  console.log('[askCropQuestion] posting to URL:', url);
 
-router.post("/a", async (req, res) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    const { question } = req.body;
-    if (!question) return res.status(400).json({ error: "Missing question" });
-
-    const GEMINI_KEY = process.env.GEMINI_API_KEY;
-    if (!GEMINI_KEY) return res.status(500).json({ error: "Missing GEMINI_API_KEY" });
-
-    const apiUrl = "https://generativeai.googleapis.com/v1/models/text-bison-001:generate";
-
-    const payload = {
-      prompt: { text: question },
-      maxOutputTokens: 512,
-      temperature: 0.2,
-    };
-
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${GEMINI_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question }),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Gemini API error:", response.status, errText);
-      return res.status(502).json({ error: "Gemini API failed", details: errText });
+    console.log('[askCropQuestion] fetch resolved, status=', res.status);
+
+    if (!res.ok) {
+      let errText = '';
+      try { errText = await res.text(); } catch { errText = String(res.status); }
+      console.error('[askCropQuestion] non-OK response:', res.status, errText);
+      throw new Error(`API error ${res.status}: ${errText}`);
     }
 
-    const data = await response.json();
-    const reply =
-      data?.output?.[0]?.content?.map((c: any) => c.text).join("") ||
-      data?.candidates?.[0]?.content?.map((c: any) => c.text).join("") ||
-      (typeof data === "string" ? data : JSON.stringify(data));
-
-    res.json({ reply });
-  } catch (err) {
-    console.error("a error:", err);
-    res.status(500).json({ error: "Server error" });
+    const data = await res.json();
+    console.log('[askCropQuestion] response JSON:', data);
+    return data.reply;
+  } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      console.error('[askCropQuestion] request timed out');
+      throw new Error('Request timed out');
+    }
+    console.error('[askCropQuestion] threw error:', err);
+    throw err;
   }
-});
-
-export default router;
-*/
-
-
-// client/src/lib/gemini.ts
-
-export async function askCropQuestion(question: string) {
-  const res = await fetch("/api/a", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API error ${res.status}: ${text}`);
-  }
-
-  const data = await res.json();
-  return data.reply;
 }
+
+// export async function askCropQuestion(question: string) {
+//   console.log('[askCropQuestion] called with:', question);
+
+//   const url = 'http://localhost:5000/api/a'; // explicit backend port
+//   console.log('[askCropQuestion] posting to URL:', url);
+
+//   const res = await fetch(url, {
+//     method: 'POST',
+//     headers: { 'Content-Type': 'application/json' },
+//     body: JSON.stringify({ question }),
+//   });
+
+//   console.log('[askCropQuestion] fetch resolved, status=', res.status);
+
+//   const data = await res.json();
+//   console.log('[askCropQuestion] response JSON:', data);
+//   return data.reply;
+// }

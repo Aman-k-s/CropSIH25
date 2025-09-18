@@ -10,7 +10,7 @@ const CardHeader = CardModule.CardHeader || (({ children, className = '' }: any)
 const CardContent = CardModule.CardContent || (({ children, className = '' }: any) => <div className={className}>{children}</div>);
 import { useTranslation } from '@/hooks/useTranslation';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
-import { askCropQuestion } from '@/lib/gemini';
+import {askCropQuestion} from '@/lib/gemini';
 import { MessageCircle, X, Mic, Send, Bot, User } from 'lucide-react';
 //import { askCropQuestion } from '@/lib/gemini';
 
@@ -82,18 +82,29 @@ export default function ChatBot() {
     setIsLoading(true);
 
     try {
-      const response = await askCropQuestion(message);
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: response,
-        isUser: false,
-        timestamp: new Date(),
-      };
+      // right before calling
+console.log('[ChatBot] sending question:', message);
+console.log('[ChatBot] typeof askCropQuestion =', typeof askCropQuestion);
+const response = await askCropQuestion(message);
+console.log('[ChatBot] typeof askCropQuestion =', typeof askCropQuestion);
+
+
+// const response = await askCropQuestion(message);
+
+const botMessage: Message = {
+  id: (Date.now() + 1).toString(),
+  text: response,
+  isUser: false,
+  timestamp: new Date(),
+};
+console.log('[ChatBot] got response:', response);
       setMessages(prev => [...prev, botMessage]);
-    } catch (error) {
+    // in ChatBot sendMessage catch
+    } catch (error: any) {
+      const errorText = error?.message || "I'm having trouble connecting right now. Please try again later.";
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I'm having trouble connecting right now. Please try again later.",
+        text: errorText,
         isUser: false,
         timestamp: new Date(),
       };
@@ -252,7 +263,7 @@ export default function ChatBot() {
                 </Button>
 
                 <Input
-                  placeholder={t('type_your_question') || 'Type your question...'}
+                  placeholder={'Type your question...'}
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyDown={handleKeyDown}
