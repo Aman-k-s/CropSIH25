@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Bot, Satellite, Cloud, Bug, Beaker, Camera, Download } from 'lucide-react';
+import { EEData } from "./EEData";
 
 export function FieldReport() {
   const { t } = useTranslation();
@@ -94,26 +95,7 @@ export function FieldReport() {
 
         {/* Data Sources Grid */}
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Card className="bg-primary/10 border-primary/20">
-              <CardContent className="p-4">
-                <div className="flex items-center mb-2">
-                  <Satellite className="mr-2 h-4 w-4 text-primary" />
-                  <h4 className="font-medium text-primary">{t('field_data')}</h4>
-                </div>
-                <div className="text-sm text-primary/80">{t('satellite_analysis')}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-secondary/10 border-secondary/20">
-              <CardContent className="p-4">
-                <div className="flex items-center mb-2">
-                  <Satellite className="mr-2 h-4 w-4 text-secondary" />
-                  <h4 className="font-medium text-secondary">{t('satellite_data')}</h4>
-                </div>
-                <div className="text-sm text-secondary/80">{t('ndvi_calculated')}</div>
-              </CardContent>
-            </Card>
-          </div>
+          <EEData/>
 
           {/* Weather Card */}
           <Card>

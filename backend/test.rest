@@ -1,0 +1,50 @@
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{"username": "admin", "password":"admin"}
+
+###
+
+POST http://127.0.0.1:8000/signup
+Content-Type: application/json
+
+{"username":"Rakshit", "password":"test", "email":"rakshit3raj@gmail.com"}
+
+###
+
+GET http://127.0.0.1:8000/test_token
+Content-Type: application/json
+Authorization: Token d5168cd4b604859db241e89734016b806393e69f
+
+{}
+
+###
+
+POST http://127.0.0.1:8000/field/set_polygon
+Content-Type: application/json
+Authorization: Token d5168cd4b604859db241e89734016b806393e69f
+
+{
+  "polygon": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [77.2090, 28.6139],
+        [77.2290, 28.6139],
+        [77.2290, 28.6339],
+        [77.2090, 28.6339],
+        [77.2090, 28.6139]
+      ]
+    ]
+  },
+  "cropType": "Wheat"
+}
+
+###
+
+GET http://127.0.0.1:8000/field/ee
+Content-Type: application/json
+Authorization: Token d5168cd4b604859db241e89734016b806393e69f
+
+{}
+
