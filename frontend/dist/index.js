@@ -154,7 +154,7 @@ async function setupVite(app2, server) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path2.resolve(import.meta.dirname, "public");
+  const distPath = path2.resolve(import.meta.dirname, "..", "dist", "public");
   if (!fs.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
@@ -210,7 +210,7 @@ app.use((req, res, next) => {
       res.status(status).json({ message });
     });
     const port = parseInt(process.env.PORT || "5000", 10);
-    app.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
+    app.listen({ port, host: "127.0.0.1" }, () => {
       log(`Server running on port ${port}`);
     });
   } catch (err) {

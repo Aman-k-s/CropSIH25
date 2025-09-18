@@ -27,7 +27,7 @@ export function Sidebar({ activeTab, onTabChange, className = '' }: SidebarProps
           <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
             <Sprout className="text-primary text-xl" />
           </div>
-          <span className="text-xl font-bold">CROP DROP</span>
+          <span className="text-xl font-bold">Krishi Saarthi</span>
         </div>
         
         {/* Navigation Menu */}

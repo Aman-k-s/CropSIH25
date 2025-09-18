@@ -198,7 +198,7 @@ export default function MapView() {
       </div>
 
       {/* Optional Crop Input */}
-      <div className="farm-info-inputs">
+      {/* <div className="farm-info-inputs">
         <input
           type="text"
           placeholder="Enter Crop Type (optional)"
@@ -206,7 +206,7 @@ export default function MapView() {
           onChange={(e) => setCropType(e.target.value)}
           className="input-field"
         />
-      </div>
+      </div> */}
 
       {/* Map */}
       <div className="map-container">
@@ -260,7 +260,7 @@ export default function MapView() {
               pathOptions={{
                 color: "#4caf50",
                 fillColor: "#4caf50",
-                fillOpacity: 0.2,
+                // fillOpacity: 0.2,
               }}
             />
           )}
