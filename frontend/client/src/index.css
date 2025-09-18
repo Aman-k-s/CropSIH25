@@ -1,0 +1,146 @@
+/*@import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+@import "leaflet/dist/leaflet.css";
+ @import "leaflet-draw/dist/leaflet.draw.css";
+@import "leaflet-control-geocoder/dist/Control.Geocoder.css";*/
+/*@import url("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css");
+@import url("https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css");
+@import url("https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css");*/
+
+@import url("https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css");
+@import url("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css");
+@import url("https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css");
+
+
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(120, 30%, 98%);
+  --foreground: hsl(120, 30%, 10%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(120, 30%, 10%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(120, 30%, 10%);
+  --primary: hsl(142, 76%, 36%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(142, 60%, 25%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(120, 10%, 95%);
+  --muted-foreground: hsl(120, 10%, 45%);
+  --accent: hsl(45, 93%, 47%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(120, 20%, 88%);
+  --input: hsl(120, 10%, 98%);
+  --ring: hsl(142, 76%, 36%);
+  --chart-1: hsl(142, 76%, 36%);
+  --chart-2: hsl(45, 93%, 47%);
+  --chart-3: hsl(0, 84%, 60%);
+  --chart-4: hsl(200, 84%, 60%);
+  --chart-5: hsl(280, 84%, 60%);
+  --sidebar: hsl(142, 76%, 36%);
+  --sidebar-foreground: hsl(0, 0%, 100%);
+  --sidebar-primary: hsl(0, 0%, 100%);
+  --sidebar-primary-foreground: hsl(142, 76%, 36%);
+  --sidebar-accent: hsl(142, 60%, 25%);
+  --sidebar-accent-foreground: hsl(0, 0%, 100%);
+  --sidebar-border: hsl(142, 60%, 30%);
+  --sidebar-ring: hsl(0, 0%, 100%);
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: hsl(120, 10%, 3%);
+  --foreground: hsl(120, 10%, 95%);
+  --card: hsl(120, 10%, 8%);
+  --card-foreground: hsl(120, 10%, 95%);
+  --popover: hsl(120, 10%, 8%);
+  --popover-foreground: hsl(120, 10%, 95%);
+  --primary: hsl(142, 76%, 36%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(142, 60%, 25%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(120, 10%, 15%);
+  --muted-foreground: hsl(120, 10%, 60%);
+  --accent: hsl(45, 93%, 47%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(120, 10%, 20%);
+  --input: hsl(120, 10%, 15%);
+  --ring: hsl(142, 76%, 36%);
+  --sidebar: hsl(142, 76%, 36%);
+  --sidebar-foreground: hsl(0, 0%, 100%);
+  --sidebar-primary: hsl(0, 0%, 100%);
+  --sidebar-primary-foreground: hsl(142, 76%, 36%);
+  --sidebar-accent: hsl(142, 60%, 25%);
+  --sidebar-accent-foreground: hsl(0, 0%, 100%);
+  --sidebar-border: hsl(142, 60%, 30%);
+  --sidebar-ring: hsl(0, 0%, 100%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+.gradient-bg {
+  background: linear-gradient(135deg, hsl(142, 76%, 36%) 0%, hsl(142, 60%, 25%) 100%);
+}
+
+.leaflet-container {
+  height: 100%;
+  border-radius: var(--radius);
+  z-index: 1;
+}
+
+.chat-bounce {
+  animation: chatBounce 2s infinite;
+}
+
+@keyframes chatBounce {
+  0%, 20%, 50%, 80%, 100% { 
+    transform: translateY(0); 
+  }
+  40% { 
+    transform: translateY(-10px); 
+  }
+  60% { 
+    transform: translateY(-5px); 
+  }
+}
+
+.voice-recording {
+  animation: voicePulse 1.5s infinite;
+}
+
+@keyframes voicePulse {
+  0% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7; 
+    transform: scale(1.1);
+  }
+  100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+}
+
+.ndvi-chart {
+  background: linear-gradient(135deg, hsl(120, 40%, 95%) 0%, hsl(120, 30%, 90%) 100%);
+}

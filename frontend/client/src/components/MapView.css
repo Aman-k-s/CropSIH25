@@ -1,0 +1,87 @@
+.mapview-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-green-300 { background-color: #81c784; }
+.btn-green-400 { background-color: #66bb6a; }
+.btn-green-500 { background-color: #4caf50; }
+.btn-green-600 { background-color: #43a047; }
+.btn-green-700 { background-color: #388e3c; }
+.btn-green-800 { background-color: #2e7d32; }
+
+.map-container {
+  height: 500px;
+  width: 100%;
+  border: 2px solid #4caf50;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.area-display {
+  margin-top: 10px;
+  text-align: center;
+  font-weight: bold;
+  color: #333;
+}
+.coords-display {
+  margin-top: 15px;
+  padding: 10px;
+  border: 1px solid #4caf50;
+  border-radius: 8px;
+  background-color: #e8f5e9;
+  font-size: 14px;
+}
+
+.coords-display h4 {
+  margin-bottom: 5px;
+  color: #2e7d32;
+}
+
+.coords-display ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.coords-display li {
+  line-height: 1.4;
+  color: #1b5e20;
+}
+.farm-info-inputs {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+
+.input-field {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #4caf50;
+  outline: none;
+  min-width: 150px;
+}
