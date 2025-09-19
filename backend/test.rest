@@ -48,3 +48,9 @@ Authorization: Token d5168cd4b604859db241e89734016b806393e69f
 
 {}
 
+###
+GET http://127.0.0.1:8000/field/coord
+Content-Type: application/json
+Authorization: Token d5168cd4b604859db241e89734016b806393e69f
+
+{}

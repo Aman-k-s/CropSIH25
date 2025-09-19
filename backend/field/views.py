@@ -11,6 +11,7 @@ from .serializers import (
     FieldDataResponseSerializer,
 )
 from .utils import fetchEEData
+from django.shortcuts import get_object_or_404
 
 class FieldDataView(APIView):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
@@ -64,3 +65,16 @@ class SavePolygon(APIView):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+class getCoord(APIView):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        field_data = get_object_or_404(FieldData, user=request.user)
+        polygon = field_data.polygon
+
+        coords = polygon.get("coordinates", [])
+        first_coord = coords[0][0] if coords and coords[0] else None
+
+        return Response({"coord": first_coord})
