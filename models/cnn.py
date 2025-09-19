@@ -9,5 +9,5 @@ def predict_health(img_path):
         prob = torch.sigmoid(output).item()
     return {"probability": prob, "class": "Healthy" if prob > 0.5 else "Stressed"}
 # test
-test_img = '/content/drive/MyDrive/Crop_data/Healthy/sample1.jpg'
-print(predict_health(test_img))
+# test_img = '/content/drive/MyDrive/Crop_data/Healthy/sample1.jpg'
+# print(predict_health(test_img))

@@ -42,7 +42,7 @@ export const translations = {
     
     // Data Analytics
     indices_report: "Indices report AWD conditions",
-    tree_count: "Tree count (for agro forestry) if possible",
+    tree_count: "Tree count (for agro forestry)",
     trees_detected: "Trees detected",
     last_scan: "Last scan: 2 days ago",
     carbon_credits: "Carbon credits estimates",
@@ -109,7 +109,7 @@ export const translations = {
     
     // Data Analytics
     indices_report: "सूचकांक रिपोर्ट AWD स्थितियां",
-    tree_count: "पेड़ की गिनती (कृषि वानिकी के लिए) यदि संभव हो",
+    tree_count: "पेड़ की गिनती (कृषि वानिकी के लिए)",
     trees_detected: "पेड़ का पता लगाया गया",
     last_scan: "अंतिम स्कैन: 2 दिन पहले",
     carbon_credits: "कार्बन क्रेडिट अनुमान",
@@ -176,7 +176,7 @@ export const translations = {
     
     // Data Analytics
     indices_report: "ਸੂਚਕਾਂਕ ਰਿਪੋਰਟ AWD ਸਥਿਤੀਆਂ",
-    tree_count: "ਰੁੱਖਾਂ ਦੀ ਗਿਣਤੀ (ਖੇਤੀ ਵਨਸਪਤੀ ਲਈ) ਜੇ ਸੰਭਵ ਹੋਵੇ",
+    tree_count: "ਰੁੱਖਾਂ ਦੀ ਗਿਣਤੀ (ਖੇਤੀ ਵਨਸਪਤੀ ਲਈ)",
     trees_detected: "ਰੁੱਖ ਲੱਭੇ ਗਏ",
     last_scan: "ਆਖਰੀ ਸਕੈਨ: 2 ਦਿਨ ਪਹਿਲਾਂ",
     carbon_credits: "ਕਾਰਬਨ ਕ੍ਰੈਡਿਟ ਅਨੁਮਾਨ",
