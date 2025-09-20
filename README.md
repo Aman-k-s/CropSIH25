@@ -29,7 +29,7 @@ npm install
 npm start
 ```
 
-The frontend should now be running on [http://localhost:3000](http://localhost:3000).
+The frontend should now be running on [http://localhost:5000](http://localhost:5000).
 
 ---
 
@@ -40,14 +40,18 @@ The frontend should now be running on [http://localhost:3000](http://localhost:3
 ```bash
 cd backend
 ```
-
-2. Install Python dependencies:
+2. Setup the Virtual Environment
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+3. Install Python dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. **Authenticate Google Earth Engine** (one-time setup):
+4. **Authenticate Google Earth Engine** (one-time setup):
 
 ```bash
 earthengine authenticate
@@ -55,7 +59,7 @@ earthengine authenticate
 
 Follow the instructions to allow access.
 
-4. Start the Django server:
+5. Start the Django server:
 
 ```bash
 python manage.py runserver
