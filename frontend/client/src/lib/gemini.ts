@@ -1,13 +1,25 @@
 // src/lib/gemini.ts (client) — named export, robust logs (dev) with session management
+// Drop-in TypeScript file for frontend usage.
+// Usage: import { askCropQuestion, clearConversationHistory, getCurrentSessionId, getUserLocation } from './lib/gemini';
+
 let sessionId: string | null = null;
 
 // Initialize session ID on first load
 const initializeSession = () => {
   if (typeof window !== 'undefined') {
-    sessionId = localStorage.getItem('chatSessionId');
+    try {
+      sessionId = localStorage.getItem('chatSessionId');
+    } catch (e) {
+      console.warn('[initializeSession] localStorage not available', e);
+      sessionId = null;
+    }
     if (!sessionId) {
       sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem('chatSessionId', sessionId);
+      try {
+        localStorage.setItem('chatSessionId', sessionId);
+      } catch (e) {
+        console.warn('[initializeSession] failed to set localStorage', e);
+      }
       console.log('[initializeSession] created new sessionId:', sessionId);
     } else {
       console.log('[initializeSession] loaded existing sessionId:', sessionId);
@@ -19,17 +31,69 @@ const initializeSession = () => {
 // Initialize session when module loads
 initializeSession();
 
+export type Location = { lat: number; lon: number } | null;
+
+export async function getUserLocation(timeoutMs = 10000): Promise<Location> {
+  if (typeof window === 'undefined' || !('geolocation' in navigator)) {
+    console.warn('[getUserLocation] geolocation not available');
+    return null;
+  }
+
+  console.log('[getUserLocation] requesting location permission...');
+
+  return new Promise((resolve) => {
+    const onSuccess = (pos: GeolocationPosition) => {
+      // Round to 3 decimals to reduce precision for privacy
+      const lat = Math.round(pos.coords.latitude * 1000) / 1000;
+      const lon = Math.round(pos.coords.longitude * 1000) / 1000;
+      console.log('[getUserLocation] location obtained:', { lat, lon });
+      resolve({ lat, lon });
+    };
+
+    const onError = (err: GeolocationPositionError) => {
+      console.warn('[getUserLocation] geolocation error:', err.code, err.message);
+      
+      switch(err.code) {
+        case err.PERMISSION_DENIED:
+          console.warn('[getUserLocation] user denied location permission');
+          break;
+        case err.POSITION_UNAVAILABLE:
+          console.warn('[getUserLocation] location information unavailable');
+          break;
+        case err.TIMEOUT:
+          console.warn('[getUserLocation] location request timeout');
+          break;
+        default:
+          console.warn('[getUserLocation] unknown geolocation error');
+          break;
+      }
+      
+      resolve(null);
+    };
+
+    const options: PositionOptions = {
+      enableHighAccuracy: false,
+      timeout: timeoutMs,
+      maximumAge: 10 * 60 * 1000, // 10 minutes cache
+    };
+
+    // This call will trigger the browser's permission popup if permission hasn't been granted
+    navigator.geolocation.getCurrentPosition(onSuccess, onError, options);
+  });
+}
+
 export async function askCropQuestion(
-  question: string, 
-  options: { 
-    clearHistory?: boolean; 
+  question: string,
+  options: {
+    clearHistory?: boolean;
     timeoutMs?: number;
+    location?: Location; // optional location to send to server
   } = {}
 ) {
-  const { clearHistory = false, timeoutMs = 15000 } = options;
-  
+  const { clearHistory = false, timeoutMs = 15000, location = null } = options;
+
   console.log('[askCropQuestion] called with:', question);
-  console.log('[askCropQuestion] options:', { clearHistory, timeoutMs });
+  console.log('[askCropQuestion] options:', { clearHistory, timeoutMs, location });
   console.log('[askCropQuestion] sessionId:', sessionId);
 
   // Ensure we have a session ID
@@ -46,12 +110,16 @@ export async function askCropQuestion(
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const requestBody = {
+    const requestBody: any = {
       question,
       sessionId,
-      clearHistory
+      clearHistory,
     };
-    
+
+    if (location) {
+      requestBody.location = location;
+    }
+
     console.log('[askCropQuestion] request body:', requestBody);
 
     const res = await fetch(url, {
@@ -66,26 +134,36 @@ export async function askCropQuestion(
 
     if (!res.ok) {
       let errText = '';
-      try { errText = await res.text(); } catch { errText = String(res.status); }
+      try {
+        errText = await res.text();
+      } catch {
+        errText = String(res.status);
+      }
       console.error('[askCropQuestion] non-OK response:', res.status, errText);
       throw new Error(`API error ${res.status}: ${errText}`);
     }
 
     const data = await res.json();
     console.log('[askCropQuestion] response JSON:', data);
-    
+
     // Update session ID if server returned a new one
     if (data.sessionId && data.sessionId !== sessionId && typeof window !== 'undefined') {
       sessionId = data.sessionId;
-      localStorage.setItem('chatSessionId', sessionId);
+      if (sessionId != null) {
+        try {
+          localStorage.setItem('chatSessionId', sessionId);
+        } catch (e) {
+          console.warn('[askCropQuestion] failed to set localStorage', e);
+        }
+      }
       console.log('[askCropQuestion] updated sessionId to:', sessionId);
     }
-    
+
     // Log conversation stats
     if (data.conversationLength !== undefined) {
       console.log('[askCropQuestion] conversation length:', data.conversationLength);
     }
-    
+
     return data.reply;
   } catch (err: any) {
     if (err?.name === 'AbortError') {
@@ -100,7 +178,7 @@ export async function askCropQuestion(
 // Function to clear conversation history
 export async function clearConversationHistory(timeoutMs = 5000) {
   console.log('[clearConversationHistory] called for sessionId:', sessionId);
-  
+
   if (!sessionId) {
     console.log('[clearConversationHistory] no sessionId, initializing new session');
     initializeSession();
@@ -109,7 +187,7 @@ export async function clearConversationHistory(timeoutMs = 5000) {
 
   const BASE_URL = process.env.REACT_APP_API_BASE_URL ?? '';
   const url = `${BASE_URL}/api/a/history/${sessionId}`;
-  
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -121,12 +199,16 @@ export async function clearConversationHistory(timeoutMs = 5000) {
     clearTimeout(timeout);
 
     console.log('[clearConversationHistory] response status:', res.status);
-    
+
     if (res.ok) {
       // Generate new session ID after clearing
       if (typeof window !== 'undefined') {
         sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem('chatSessionId', sessionId);
+        try {
+          localStorage.setItem('chatSessionId', sessionId);
+        } catch (e) {
+          console.warn('[clearConversationHistory] failed to set localStorage', e);
+        }
         console.log('[clearConversationHistory] generated new sessionId:', sessionId);
       }
       return true;
@@ -144,19 +226,6 @@ export async function clearConversationHistory(timeoutMs = 5000) {
   }
 }
 
-// Function to start a new conversation (client-side only)
-// export function startNewConversation() {
-//   console.log('[startNewConversation] starting new conversation');
-  
-//   if (typeof window !== 'undefined') {
-//     sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-//     localStorage.setItem('chatSessionId', sessionId);
-//     console.log('[startNewConversation] created new sessionId:', sessionId);
-//   }
-  
-//   return sessionId;
-// }
-
 // Function to get current session ID
 export function getCurrentSessionId() {
   return sessionId;
@@ -165,7 +234,7 @@ export function getCurrentSessionId() {
 // Function to get conversation history (optional - for debugging or UI features)
 export async function getConversationHistory(timeoutMs = 5000) {
   console.log('[getConversationHistory] called for sessionId:', sessionId);
-  
+
   if (!sessionId) {
     console.log('[getConversationHistory] no sessionId available');
     return { history: [], length: 0 };
@@ -173,7 +242,7 @@ export async function getConversationHistory(timeoutMs = 5000) {
 
   const BASE_URL = process.env.REACT_APP_API_BASE_URL ?? '';
   const url = `${BASE_URL}/api/a/history/${sessionId}`;
-  
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -185,7 +254,7 @@ export async function getConversationHistory(timeoutMs = 5000) {
     clearTimeout(timeout);
 
     console.log('[getConversationHistory] response status:', res.status);
-    
+
     if (res.ok) {
       const data = await res.json();
       console.log('[getConversationHistory] history data:', data);

@@ -16,6 +16,39 @@ import {
 } from "lucide-react";
 import { EEData } from "./EEData";
 
+/**
+ * Safely resolve the client-side API key depending on bundler/framework:
+ * - Vite: import.meta.env.VITE_OPENWEATHER_API_KEY
+ * - Next.js: process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY
+ *
+ * WARNING: any key available to client-side JS is exposed to users. For production,
+ * prefer proxying requests through your server so the API key remains secret.
+ */
+const API_TOKEN: string | undefined = (() => {
+  // Try Vite
+  try {
+    // `import.meta` exists in Vite and some ESM runtimes — use `any` to avoid TS errors
+    const viteKey = (import.meta as any)?.env?.VITE_OPENWEATHER_API_KEY;
+    if (viteKey) return String(viteKey);
+  } catch (e) {
+    /* ignore */
+  }
+
+  // Try Next.js / webpack injected vars
+  try {
+    if (typeof process !== "undefined" && (process.env as any)) {
+      const nextKey =
+        (process.env as any).NEXT_PUBLIC_OPENWEATHER_API_KEY ||
+        (process.env as any).OPENWEATHER_API_KEY;
+      if (nextKey) return String(nextKey);
+    }
+  } catch (e) {
+    /* ignore */
+  }
+
+  return undefined;
+})();
+
 export function FieldReport() {
   const { t } = useTranslation();
 
@@ -27,37 +60,87 @@ export function FieldReport() {
   const [weather, setWeather] = useState<any>(null);
   const [forecast, setForecast] = useState<any[]>([]);
 
-  const API_TOKEN = "d5168cd4b604859db241e89734016b806393e69f";
   // Fetch coordinates + weather
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-        // Get first coord from backend
+        if (!API_TOKEN) {
+          console.warn(
+            "[FieldReport] OpenWeather API key missing. Set VITE_OPENWEATHER_API_KEY (Vite) or NEXT_PUBLIC_OPENWEATHER_API_KEY (Next.js)."
+          );
+          return;
+        }
+
+        // Get first coord from your backend (example endpoint)
         const coordRes = await fetch("http://localhost:8000/field/coord", {
           headers: {
-            Authorization: `Token ${API_TOKEN}`,
+            // If your backend requires auth, don't put the OpenWeather key here.
+            // This header is placeholder; use your server's required auth.
+            // Authorization: `Token ${API_TOKEN}`,
           },
         });
-        const coordData = await coordRes.json();
-        const { coord } = coordData; // [lon, lat]
-        const [lon, lat] = coord;
 
-        const apiKey = "556670b48ccab73ece536515735bedbf"; // weather api OpenWeather
+        if (!coordRes.ok) {
+          console.warn("[FieldReport] coord endpoint failed:", coordRes.status);
+          return;
+        }
+
+        const coordData = await coordRes.json();
+        // Expect server to return coord as [lon, lat] or { lon, lat } — adapt if needed.
+        const coord = coordData?.coord || coordData?.location || null;
+        let lon: number | undefined;
+        let lat: number | undefined;
+        if (Array.isArray(coord)) {
+          [lon, lat] = coord;
+        } else if (coord && typeof coord === "object") {
+          lon = coord.lon ?? coord.lng ?? coord.x;
+          lat = coord.lat ?? coord.y;
+        }
+
+        if (lat === undefined || lon === undefined) {
+          console.warn("[FieldReport] invalid coord from server:", coordData);
+          return;
+        }
+
+        // Use env key here (client-side). For security, prefer calling your own server route
+        // that uses the secret key and forwards a sanitized weather response.
+        const openWeatherKey = API_TOKEN;
 
         // Current weather
         const weatherRes = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`
+          `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(
+            lat
+          )}&lon=${encodeURIComponent(lon)}&appid=${encodeURIComponent(
+            openWeatherKey
+          )}&units=metric`
         );
+
+        if (!weatherRes.ok) {
+          console.warn("[FieldReport] OpenWeather current weather failed", weatherRes.status);
+          return;
+        }
         const weatherData = await weatherRes.json();
 
-        // Hourly forecast (next few hours)
+        // Hourly forecast (note: free OpenWeather does not expose pro/hourly endpoint;
+        // you might want to use One Call API / forecast endpoint instead)
         const forecastRes = await fetch(
-          `https://pro.openweathermap.org/data/2.5/forecast/hourly?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`
+          `https://api.openweathermap.org/data/2.5/forecast?lat=${encodeURIComponent(
+            lat
+          )}&lon=${encodeURIComponent(lon)}&appid=${encodeURIComponent(
+            openWeatherKey
+          )}&units=metric`
         );
-        const forecastData = await forecastRes.json();
 
+        let forecastData: any = {};
+        if (forecastRes.ok) {
+          forecastData = await forecastRes.json();
+        } else {
+          console.warn("[FieldReport] forecast fetch failed", forecastRes.status);
+        }
+
+        // set state
         setWeather(weatherData);
-        setForecast(forecastData.list?.slice(0, 3) || []); // take next 3 hours
+        setForecast(forecastData.list?.slice(0, 3) || []); // take next 3 periods
       } catch (err) {
         console.error("Weather fetch error:", err);
       }
@@ -79,8 +162,7 @@ export function FieldReport() {
 
   // Upload all selected files
   const handleUpload = async () => {
-    if (selectedFiles.length === 0)
-      return alert("Please select at least one file!");
+    if (selectedFiles.length === 0) return alert("Please select at least one file!");
 
     setUploading(true);
     const formData = new FormData();
@@ -112,13 +194,8 @@ export function FieldReport() {
     <div className="p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-foreground">
-          {t("field_report")}
-        </h1>
-        <Button
-          onClick={handlePDFDownload}
-          className="bg-primary hover:bg-primary/90"
-        >
+        <h1 className="text-2xl font-bold text-foreground">{t("field_report")}</h1>
+        <Button onClick={handlePDFDownload} className="bg-primary hover:bg-primary/90">
           <Download className="mr-2 h-4 w-4" />
           {t("print_pdf")}
         </Button>
@@ -136,16 +213,12 @@ export function FieldReport() {
           <CardContent>
             <div className="space-y-4">
               <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  {t("analysis_result")}
-                </p>
+                <p className="text-sm text-muted-foreground">{t("analysis_result")}</p>
               </div>
               <div className="flex space-x-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">85%</div>
-                  <div className="text-xs text-muted-foreground">
-                    {t("health_score")}
-                  </div>
+                  <div className="text-xs text-muted-foreground">{t("health_score")}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-accent">0.7</div>
@@ -165,9 +238,7 @@ export function FieldReport() {
             <CardContent className="p-4">
               <div className="flex items-center mb-3">
                 <Cloud className="mr-2 h-4 w-4 text-card-foreground" />
-                <h4 className="font-medium text-card-foreground">
-                  {t("weather_data")}
-                </h4>
+                <h4 className="font-medium text-card-foreground">{t("weather_data")}</h4>
               </div>
               <div className="bg-accent/10 rounded-lg p-4 space-y-3">
                 {weather ? (
@@ -175,20 +246,18 @@ export function FieldReport() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-accent">
-                          {weather.weather[0]?.description}
+                          {weather.weather?.[0]?.description}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {weather.main.temp}°C, {weather.main.humidity}% humidity
+                          {weather.main?.temp}°C, {weather.main?.humidity}% humidity
                         </p>
                       </div>
                       <div className="text-2xl">
-                        {weather.weather[0]?.main === "Rain" ? "🌧️" : "☀️"}
+                        {weather.weather?.[0]?.main === "Rain" ? "🌧️" : "☀️"}
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm font-medium">
-                        Avoid irrigation tomorrow, as it might rain tomorrow
-                      </p>
+                      <p className="text-sm font-medium">Avoid irrigation tomorrow, as it might rain tomorrow</p>
                       <ul className="mt-2 space-y-1 text-sm">
                         {forecast.map((f, i) => (
                           <li key={i} className="flex justify-between">
@@ -198,14 +267,14 @@ export function FieldReport() {
                                 minute: "2-digit",
                               })}
                             </span>
-                            <span>{f.main.temp}°C</span>
+                            <span>{f.main?.temp}°C</span>
                           </li>
                         ))}
                       </ul>
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">'loading...</p>
+                  <p className="text-sm text-muted-foreground">'loading...'</p>
                 )}
               </div>
             </CardContent>
@@ -234,26 +303,13 @@ export function FieldReport() {
               </div>
               <label className="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
                 {t("select_photos")}
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleFilesChange}
-                  className="hidden"
-                />
+                <input type="file" accept="image/*" multiple onChange={handleFilesChange} className="hidden" />
               </label>
-              <Button
-                size="sm"
-                className="bg-accent hover:bg-accent/90"
-                onClick={handleUpload}
-                disabled={uploading || selectedFiles.length === 0}
-              >
+              <Button size="sm" className="bg-accent hover:bg-accent/90" onClick={handleUpload} disabled={uploading || selectedFiles.length === 0}>
                 <Camera className="mr-2 h-4 w-4" />
                 {uploading ? "Uploading..." : t("scan")}
               </Button>
-              {result && (
-                <p className="text-sm text-muted-foreground mt-2">{result}</p>
-              )}
+              {result && <p className="text-sm text-muted-foreground mt-2">{result}</p>}
             </div>
           </CardContent>
         </Card>
@@ -283,9 +339,7 @@ export function FieldReport() {
                 </div>
               </div>
               <div className="p-4 bg-primary/10 rounded-lg">
-                <p className="text-sm text-primary font-medium">
-                  {t("fertilizer_recommendation")}
-                </p>
+                <p className="text-sm text-primary font-medium">{t("fertilizer_recommendation")}</p>
               </div>
             </div>
           </CardContent>

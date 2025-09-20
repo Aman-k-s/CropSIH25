@@ -14,11 +14,77 @@ var cleanupOldConversations = () => {
   }
 };
 setInterval(cleanupOldConversations, 30 * 60 * 1e3);
+var WEATHER_CACHE = /* @__PURE__ */ new Map();
+var WEATHER_TTL_MS = 10 * 60 * 1e3;
+function isWeatherQuestion(text) {
+  if (!text) return false;
+  const qs = text.toLowerCase();
+  const keywords = [
+    "weather",
+    "rain",
+    "forecast",
+    "temperature",
+    "temp",
+    "wind",
+    "humidity",
+    "sunny",
+    "cloud",
+    "storm",
+    "precip",
+    "snow",
+    "drizzle",
+    "heat",
+    "cold"
+  ];
+  return keywords.some((k) => qs.includes(k));
+}
+async function fetchWeatherSummary(lat, lon) {
+  const key = `${lat.toFixed(2)}_${lon.toFixed(2)}`;
+  const cached = WEATHER_CACHE.get(key);
+  if (cached && Date.now() - cached.ts < WEATHER_TTL_MS) {
+    return cached.summary;
+  }
+  const OPENWEATHER_KEY = process.env.OPENWEATHER_API_KEY;
+  if (!OPENWEATHER_KEY) {
+    console.warn("OPENWEATHER_API_KEY not set");
+    return null;
+  }
+  try {
+    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(
+      lat
+    )}&lon=${encodeURIComponent(lon)}&units=metric&appid=${OPENWEATHER_KEY}`;
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      console.warn("OpenWeather response not OK", resp.status);
+      return null;
+    }
+    const json = await resp.json();
+    const cond = json?.weather?.[0]?.description || "unknown conditions";
+    const temp = json?.main?.temp;
+    const feels = json?.main?.feels_like;
+    const humidity = json?.main?.humidity;
+    const wind = json?.wind?.speed;
+    const city = json?.name;
+    const parts = [];
+    if (city) parts.push(`Location: ${city}`);
+    parts.push(`Conditions: ${cond}`);
+    if (temp !== void 0) parts.push(`Temp: ${temp}\xB0C`);
+    if (feels !== void 0) parts.push(`Feels: ${feels}\xB0C`);
+    if (humidity !== void 0) parts.push(`Humidity: ${humidity}%`);
+    if (wind !== void 0) parts.push(`Wind: ${wind} m/s`);
+    const summary = parts.join(". ");
+    WEATHER_CACHE.set(key, { ts: Date.now(), summary });
+    return summary;
+  } catch (err) {
+    console.error("Failed to fetch OpenWeather:", err);
+    return null;
+  }
+}
 router.post("/a", async (req, res) => {
   try {
-    const { question, sessionId, clearHistory = false } = req.body;
+    const { question, sessionId: providedSessionId, clearHistory = false, location } = req.body;
     if (!question) return res.status(400).json({ error: "Missing question" });
-    const currentSessionId = sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const currentSessionId = providedSessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
     if (!GEMINI_KEY) {
       console.error("GEMINI_API_KEY not set in process.env");
@@ -32,23 +98,15 @@ router.post("/a", async (req, res) => {
     if (history.length > maxMessages) {
       history = history.slice(-maxMessages);
     }
-    const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
-    const contents = [];
-    for (const message of history) {
-      contents.push({
-        role: message.role,
-        parts: [{ text: message.text }]
-      });
+    let weatherContext = null;
+    if (location && typeof location.lat === "number" && typeof location.lon === "number" && isWeatherQuestion(question)) {
+      weatherContext = await fetchWeatherSummary(Number(location.lat), Number(location.lon));
     }
-    contents.push({
-      role: "user",
-      parts: [{ text: question }]
-    });
-    const payload = {
-      systemInstruction: {
-        parts: [
-          {
-            text: `You are an expert agricultural assistant and chatbot specifically designed to help farmers and agricultural professionals. Your primary responsibilities include:
+    const contents = [];
+    const systemInstruction = {
+      parts: [
+        {
+          text: `You are an expert agricultural assistant and chatbot specifically designed to help farmers and agricultural professionals. Your primary responsibilities include:
 
 CORE EXPERTISE:
 - Crop management and cultivation techniques
@@ -63,34 +121,66 @@ CORE EXPERTISE:
 - Seasonal planting and harvesting guidance
 
 CONVERSATION CONTEXT:
-- You have access to the conversation history to provide contextual responses
-- Reference previous questions and answers when relevant
-- Build upon earlier discussions to provide more personalized advice
-- If the user mentions "my farm" or "my crops" from earlier messages, remember those details
+- You have access to the conversation history to provide contextual responses.
+- Reference previous questions and answers when relevant.
+- Build upon earlier discussions to provide more personalized advice.
+
+EXTERNAL DATA INTEGRATION:
+- If a system message or content begins with the exact prefix "EXTERNAL_WEATHER_DATA:", that text is authoritative factual weather information fetched from an external weather API for the user's location.
+- When EXTERNAL_WEATHER_DATA is present:
+  - Treat it as reliable external data and incorporate it verbatim where relevant.
+  - Begin your reply with a short explicit sentence acknowledging you used external weather data, for example: "Using external weather data: <one-line summary>."
+  - Use the weather data to inform any weather-sensitive advice (planting, spraying, irrigation, frost warnings, etc.).
+  - Do NOT hallucinate additional weather details beyond that external data. If the user asks for specifics not present in EXTERNAL_WEATHER_DATA (e.g., "precipitation probability"), state that the external data does not include that field and ask whether you should fetch more detailed forecast data.
+  - If EXTERNAL_WEATHER_DATA contradicts things in conversation history, prefer the EXTERNAL_WEATHER_DATA for weather facts and note the discrepancy.
+- If EXTERNAL_WEATHER_DATA is not present and the user asks about current weather, clearly say you don't have up-to-date external weather data and request a location if needed.
 
 RESPONSE GUIDELINES:
-- Always respond in the same language the user asks their question in
-- Provide practical, actionable advice that farmers can implement
-- Keep responses concise but comprehensive (aim for 2-4 sentences unless more detail is needed)
-- Use simple, clear language avoiding overly technical jargon
-- When discussing chemicals or treatments, always emphasize safety precautions
-- Prioritize sustainable and environmentally friendly farming methods
-- If you're uncertain about specific regional conditions, ask for location details
-- For market prices, acknowledge that prices vary by location and time
+- Always respond in the same language the user asks their question in.
+- Provide practical, actionable advice that farmers can implement.
+- Keep responses concise but comprehensive (aim for 2-4 sentences unless more detail is needed).
+- Use simple, clear language avoiding overly technical jargon.
+- When discussing chemicals or treatments, always emphasize safety precautions.
+- Prioritize sustainable and environmentally friendly farming methods.
+- If you're uncertain about specific regional conditions, ask for location details.
+- For market prices, acknowledge that prices vary by location and time.
 
 RESPONSE FORMAT:
-- Use plain text with no markdown formatting
-- Structure information clearly with natural paragraph breaks
-- Include specific measurements, timing, or quantities when relevant
-- End with actionable next steps when appropriate
+- Use plain text with no markdown formatting.
+- Structure information clearly with natural paragraph breaks.
+- Include specific measurements, timing, or quantities when relevant.
+- End with actionable next steps when appropriate.
 
 FOCUS AREAS:
 Stay focused on agricultural topics. If asked about non-farming subjects, politely redirect: "I'm specialized in agricultural assistance. Could you ask me something related to farming, crops, or agricultural practices instead?"
 
 Remember: Your goal is to help improve agricultural productivity, sustainability, and farmer success through expert guidance. Use the conversation history to provide more personalized and contextual advice.`
+        }
+      ]
+    };
+    contents.push({ role: "system", parts: systemInstruction.parts });
+    if (weatherContext) {
+      contents.push({
+        role: "system",
+        parts: [
+          {
+            text: `EXTERNAL_WEATHER_DATA: ${weatherContext}`
           }
         ]
-      },
+      });
+    }
+    for (const message of history) {
+      contents.push({
+        role: message.role,
+        parts: [{ text: message.text }]
+      });
+    }
+    contents.push({
+      role: "user",
+      parts: [{ text: question }]
+    });
+    const payload = {
+      systemInstruction,
       contents,
       generationConfig: {
         maxOutputTokens: 512,
@@ -117,6 +207,7 @@ Remember: Your goal is to help improve agricultural productivity, sustainability
         }
       ]
     };
+    const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
@@ -138,7 +229,9 @@ Remember: Your goal is to help improve agricultural productivity, sustainability
       console.error("Failed to parse Gemini response as JSON:", e);
       return res.status(502).json({ error: "Invalid response format from Gemini" });
     }
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.output?.[0]?.content?.map((c) => c?.text || "").join("") || data?.text || "Sorry, I could not generate a proper response. Please try again.";
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || Array.isArray(data?.output) && data.output.map(
+      (o) => Array.isArray(o?.content) ? o.content.map((c) => c?.text || "").join("") : ""
+    ).join("") || data?.text || "Sorry, I could not generate a proper response. Please try again.";
     const currentTime = Date.now();
     history.push({
       role: "user",
