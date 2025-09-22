@@ -25,91 +25,6 @@ const cleanupOldConversations = () => {
 // Clean up every 30 minutes
 setInterval(cleanupOldConversations, 30 * 60 * 1000);
 
-// --- Weather utilities (small cache + fetcher) ---
-const WEATHER_CACHE = new Map<string, { ts: number; summary: string }>();
-const WEATHER_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
-
-function isWeatherQuestion(text: string): boolean {
-  if (!text) return false;
-  const qs = text.toLowerCase();
-  const keywords = [
-    'weather',
-    'rain',
-    'forecast',
-    'temperature',
-    'temp',
-    'wind',
-    'humidity',
-    'sunny',
-    'cloud',
-    'storm',
-    'precip',
-    'snow',
-    'drizzle',
-    'heat',
-    'cold',
-  ];
-  return keywords.some((k) => qs.includes(k));
-}
-
-async function fetchWeatherSummary(lat: number, lon: number): Promise<string | null> {
-  const key = `${lat.toFixed(2)}_${lon.toFixed(2)}`; // coarse key to reuse cached summaries
-  const cached = WEATHER_CACHE.get(key);
-  if (cached && Date.now() - cached.ts < WEATHER_TTL_MS) {
-    return cached.summary;
-  }
-
-  const OPENWEATHER_KEY = process.env.OPENWEATHER_API_KEY;
-  if (!OPENWEATHER_KEY) {
-    console.warn('OPENWEATHER_API_KEY not set');
-    return null;
-  }
-
-  try {
-    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(
-      lat
-    )}&lon=${encodeURIComponent(lon)}&units=metric&appid=${OPENWEATHER_KEY}`;
-    
-    console.log('OpenWeather API URL:', url.replace(OPENWEATHER_KEY, 'HIDDEN_KEY'));
-    
-    const resp = await fetch(url);
-    console.log('OpenWeather response status:', resp.status);
-    
-    if (!resp.ok) {
-      const errorText = await resp.text();
-      console.warn('OpenWeather response not OK', resp.status, errorText);
-      return null;
-    }
-    
-    const json = await resp.json();
-    console.log('OpenWeather API response:', JSON.stringify(json, null, 2));
-
-    const cond = json?.weather?.[0]?.description || 'unknown conditions';
-    const temp = json?.main?.temp;
-    const feels = json?.main?.feels_like;
-    const humidity = json?.main?.humidity;
-    const wind = json?.wind?.speed;
-    const city = json?.name;
-
-    const parts = [];
-    if (city) parts.push(`Location: ${city}`);
-    parts.push(`Conditions: ${cond}`);
-    if (temp !== undefined) parts.push(`Temp: ${temp}°C`);
-    if (feels !== undefined) parts.push(`Feels: ${feels}°C`);
-    if (humidity !== undefined) parts.push(`Humidity: ${humidity}%`);
-    if (wind !== undefined) parts.push(`Wind: ${wind} m/s`);
-
-    const summary = parts.join('. ');
-    console.log('Generated weather summary:', summary);
-    
-    WEATHER_CACHE.set(key, { ts: Date.now(), summary });
-    return summary;
-  } catch (err) {
-    console.error('Failed to fetch OpenWeather:', err);
-    return null;
-  }
-}
-
 // --- POST /api/a handler ---
 router.post('/a', async (req: Request, res: Response) => {
   try {
@@ -141,18 +56,6 @@ router.post('/a', async (req: Request, res: Response) => {
       history = history.slice(-maxMessages);
     }
 
-    // Fetch weather data every time if location is provided
-    let weatherContext: string | null = null;
-    if (
-      location &&
-      typeof location.lat === 'number' &&
-      typeof location.lon === 'number'
-    ) {
-      weatherContext = await fetchWeatherSummary(Number(location.lat), Number(location.lon));
-      console.log("SEE HERE BROHHH");
-      console.log(weatherContext);
-    }
-
     // Build system instruction
     const systemInstruction = {
       parts: [
@@ -176,17 +79,6 @@ CONVERSATION CONTEXT:
 - Reference previous questions and answers when relevant.
 - Build upon earlier discussions to provide more personalized advice.
 
-WEATHER DATA INTEGRATION:
-- You receive live weather data for the user's location automatically
-- NEVER mention "EXTERNAL_WEATHER_DATA" in your responses - this is internal system data
-- Always incorporate current weather conditions into your agricultural advice naturally
-- Focus on farming implications of the weather, such as:
-  - Heat stress warnings for crops and livestock
-  - Irrigation needs based on temperature and humidity
-  - Optimal timing for field operations
-  - Disease/pest pressure based on conditions
-  - Protection measures needed
-- Keep weather references brief and farming-focused
 
 RESPONSE GUIDELINES:
 - Always respond in the same language the user asks their question in.
@@ -225,9 +117,6 @@ Remember: Your goal is to help improve agricultural productivity, sustainability
 
     // Prepare current user message with weather context if available
     let currentUserMessage = question;
-    if (weatherContext) {
-      currentUserMessage = `EXTERNAL_WEATHER_DATA: ${weatherContext}\n\n${question}`;
-    }
 
     // Add current user message
     contents.push({

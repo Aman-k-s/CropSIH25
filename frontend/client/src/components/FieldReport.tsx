@@ -24,30 +24,7 @@ import { EEData } from "./EEData";
  * WARNING: any key available to client-side JS is exposed to users. For production,
  * prefer proxying requests through your server so the API key remains secret.
  */
-const API_TOKEN: string | undefined = (() => {
-  // Try Vite
-  try {
-    // `import.meta` exists in Vite and some ESM runtimes — use `any` to avoid TS errors
-    const viteKey = (import.meta as any)?.env?.VITE_OPENWEATHER_API_KEY;
-    if (viteKey) return String(viteKey);
-  } catch (e) {
-    /* ignore */
-  }
-
-  // Try Next.js / webpack injected vars
-  try {
-    if (typeof process !== "undefined" && (process.env as any)) {
-      const nextKey =
-        (process.env as any).NEXT_PUBLIC_OPENWEATHER_API_KEY ||
-        (process.env as any).OPENWEATHER_API_KEY;
-      if (nextKey) return String(nextKey);
-    }
-  } catch (e) {
-    /* ignore */
-  }
-
-  return undefined;
-})();
+const API_TOKEN=process.env.AUTH_TOKEN;
 
 export function FieldReport() {
   const { t } = useTranslation();
@@ -66,7 +43,7 @@ export function FieldReport() {
       try {
         if (!API_TOKEN) {
           console.warn(
-            "[FieldReport] OpenWeather API key missing. Set VITE_OPENWEATHER_API_KEY (Vite) or NEXT_PUBLIC_OPENWEATHER_API_KEY (Next.js)."
+            "[FieldReport] OpenWeather API key missing"
           );
           return;
         }
@@ -104,7 +81,7 @@ export function FieldReport() {
 
         // Use env key here (client-side). For security, prefer calling your own server route
         // that uses the secret key and forwards a sanitized weather response.
-        const openWeatherKey = API_TOKEN;
+        const openWeatherKey = process.env.OPENWEATHER_API_KEY as string;
 
         // Current weather
         const weatherRes = await fetch(
@@ -187,7 +164,7 @@ export function FieldReport() {
   };
 
   const handlePDFDownload = () => {
-    alert("PDF report generation would be implemented here");
+    alert("Feature soon to be implemented. PDF Generation");
   };
 
   return (

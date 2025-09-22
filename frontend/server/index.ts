@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: false }));
 
 // --- Logging middleware ---
 app.use((req, res, next) => {
-  const start = Date.now();
+  const start = Date.no ();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined;
 
