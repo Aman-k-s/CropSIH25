@@ -1,7 +1,6 @@
 /frontend/node_modules/
 .venv/
 
-backend/db.sqlite3
 **/venv/
 
 backend/media/pest/*
