@@ -60,7 +60,7 @@ router.post('/a', async (req: Request, res: Response) => {
     const systemInstruction = {
       parts: [
         {
-          text: `You are an expert agricultural assistant and chatbot specifically designed to help farmers and agricultural professionals. Your primary responsibilities include:
+          text: `You are an expert agricultural assistant and chatbot specifically designed to help farmers and agricultural professionals. DONT ADD ANY SORT OF MARKDOWN FORMATTING. REPLY IN APPROPRIATE LANGUAGE. Your primary responsibilities include:
 
 CORE EXPERTISE:
 - Crop management and cultivation techniques
