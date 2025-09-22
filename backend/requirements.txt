@@ -31,17 +31,12 @@ sqlparse==0.5.3
 tzdata==2025.2
 uritemplate==4.2.0
 urllib3==2.5.0
-#AI / ML (PyTorch-based)
-torch==2.3.0
-torchvision==0.18.0
-torchaudio==2.3.0
-scikit-learn==1.5.1
-numpy==1.26.4
+torch==2.8.0
+torchvision==0.23.0
+pillow==11.3.0
+numpy==2.0.2
 pandas==2.2.2
-#Image Processing
-Pillow==10.3.0
-opencv-python==4.10.0.84
-#Data Visualization
-matplotlib==3.9.0
-seaborn==0.13.2
+scikit-learn==1.6.1
+matplotlib==3.10.0 
+seaborn==0.13.2 
 
