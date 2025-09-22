@@ -12,6 +12,9 @@ from .serializers import (
 from .utils import fetchEEData
 from django.shortcuts import get_object_or_404
 
+from models.cnn import predict_health
+
+
 class FieldDataView(APIView):
     permission_classes=[IsAuthenticated]
 
@@ -84,7 +87,7 @@ class PestReport(APIView):
             image = request.FILES["image"]
         )
         
-        result = "no pest"
+        result = predict_health(uploaded.image.path)
         serializer = PestResultSerializer({"result":result})
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
