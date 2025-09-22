@@ -49,12 +49,8 @@ export function FieldReport() {
         }
 
         // Get first coord from your backend (example endpoint)
-        const coordRes = await fetch("http://localhost:8000/field/coord", {
-          headers: {
-            // If your backend requires auth, don't put the OpenWeather key here.
-            // This header is placeholder; use your server's required auth.
-            // Authorization: `Token ${API_TOKEN}`,
-          },
+        const coordRes = await fetch("http://localhost:8000/field/coord",  {
+          headers: { Authorization: `Token d5168cd4b604859db241e89734016b806393e69f` },
         });
 
         if (!coordRes.ok) {
@@ -81,7 +77,7 @@ export function FieldReport() {
 
         // Use env key here (client-side). For security, prefer calling your own server route
         // that uses the secret key and forwards a sanitized weather response.
-        const openWeatherKey = process.env.OPENWEATHER_API_KEY as string;
+        const openWeatherKey = "556670b48ccab73ece536515735bedbf";
 
         // Current weather
         const weatherRes = await fetch(

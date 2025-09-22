@@ -37,7 +37,7 @@ export function EEData() {
       setLoading(true);
       try {
         const res = await fetch("http://localhost:8000/field/ee", {
-          headers: { Authorization: `Token ${process.env.AUTH_TOKEN}` },
+          headers: { Authorization: `Token d5168cd4b604859db241e89734016b806393e69f` },
         });
         if (!res.ok) throw new Error("Failed to fetch field data");
         const json = await res.json();
