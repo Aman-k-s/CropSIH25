@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -74,7 +75,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'KrishiSaarthi.wsgi.application'
 
-
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES":[
+        "rest_framework.authentication.TokenAuthentication"
+    ],
+    "DEFAULT_PERMISSION_CLASSES":[
+        "rest_framework.permissions.AllowAny"
+    ]
+}
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -131,3 +139,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5000",
 ]
 CORS_ALLOWED_CREDENTIALS = True
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

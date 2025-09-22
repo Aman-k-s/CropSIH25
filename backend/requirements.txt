@@ -18,6 +18,7 @@ google-resumable-media==2.7.2
 googleapis-common-protos==1.70.0
 httplib2==0.31.0
 idna==3.10
+Pillow==11.3.0
 proto-plus==1.26.1
 protobuf==6.32.1
 pyasn1==0.6.1

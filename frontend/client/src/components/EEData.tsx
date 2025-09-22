@@ -27,7 +27,6 @@ import { Line } from "react-chartjs-2";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const token = "d5168cd4b604859db241e89734016b806393e69f";
 
 export function EEData() {
   const [data, setData] = useState<any>(null);
@@ -38,7 +37,7 @@ export function EEData() {
       setLoading(true);
       try {
         const res = await fetch("http://localhost:8000/field/ee", {
-          headers: { Authorization: `Token ${token}` },
+          headers: { Authorization: `Token ${process.env.AUTH_TOKEN}` },
         });
         if (!res.ok) throw new Error("Failed to fetch field data");
         const json = await res.json();

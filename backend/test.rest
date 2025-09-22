@@ -54,3 +54,16 @@ Content-Type: application/json
 Authorization: Token d5168cd4b604859db241e89734016b806393e69f
 
 {}
+
+###
+
+POST http://127.0.0.1:8000/pest
+Authorization: Token d5168cd4b604859db241e89734016b806393e69f
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="image"; filename="sample.jpg"
+Content-Type: image/jpeg
+
+< ./sample.jpg
+--WebAppBoundary--

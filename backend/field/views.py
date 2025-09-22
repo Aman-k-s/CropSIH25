@@ -3,19 +3,17 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
-from .models import FieldData
+from .models import FieldData, Pest
 from .serializers import (
-    FieldDataResponseSerializer,
+    FieldDataResponseSerializer, PestResultSerializer
 )
 from .utils import fetchEEData
 from django.shortcuts import get_object_or_404
 
 class FieldDataView(APIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes=[IsAuthenticated]
 
     def get(self, request):
         try:
@@ -32,7 +30,6 @@ class FieldDataView(APIView):
             return Response({"error": str(e)}, status=500)
 
 class SavePolygon(APIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -67,9 +64,8 @@ class SavePolygon(APIView):
             )
 
 class getCoord(APIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
         field_data = get_object_or_404(FieldData, user=request.user)
         polygon = field_data.polygon
@@ -78,3 +74,17 @@ class getCoord(APIView):
         first_coord = coords[0][0] if coords and coords[0] else None
 
         return Response({"coord": first_coord})
+    
+class PestReport(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        uploaded = Pest.objects.create(
+            user = request.user,
+            image = request.FILES["image"]
+        )
+        
+        result = "no pest"
+        serializer = PestResultSerializer({"result":result})
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
