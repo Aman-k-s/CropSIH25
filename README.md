@@ -46,7 +46,7 @@ python -m venv venv
 
 ```bash
 pip install --upgrade pip setuptools wheel
-pip install --only-binary :all: -r backend\requirements.txt
+pip install --only-binary :all: -r backend/requirements.txt
 ```
 
 4. **Authenticate Google Earth Engine** (one-time setup):
