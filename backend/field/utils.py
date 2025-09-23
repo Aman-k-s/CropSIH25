@@ -5,7 +5,7 @@ from .models import FieldData
 def fetchEEData(user, start_date="2024-06-01", end_date="2024-06-30"):
     """
     Fetch vegetation indices, rainfall, temperature, soil moisture,
-    and NDVI time series for the logged-in user's field.
+    and NDVI/NDWI time series for the logged-in user's field.
     """
 
     # Fetch polygon for the user
@@ -131,6 +131,39 @@ def fetchEEData(user, start_date="2024-06-01", end_date="2024-06-30"):
             if v is not None:
                 time_series.append({"date": d, "NDVI": v})
 
+    # --- NDWI Time Series ---
+    ndwi_ts = (
+        ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
+        .filterBounds(aoi)
+        .filterDate(start_date, end_date)
+        .map(
+            lambda img: img.normalizedDifference(["B3", "B8"])
+            .rename("NDWI")
+            .set("date", img.date().format("YYYY-MM-dd"))
+        )
+        .select("NDWI")
+    )
+
+    ndwi_series = ndwi_ts.map(
+        lambda img: ee.Feature(
+            None,
+            {
+                "date": img.get("date"),
+                "NDWI": img.reduceRegion(
+                    ee.Reducer.mean(), aoi, 10
+                ).get("NDWI"),
+            },
+        )
+    )
+
+    ndwi_list = ndwi_series.aggregate_array("NDWI").getInfo()
+    ndwi_date_list = ndwi_series.aggregate_array("date").getInfo()
+    ndwi_time_series = []
+    if ndwi_list and ndwi_date_list:
+        for d, v in zip(ndwi_date_list, ndwi_list):
+            if v is not None:
+                ndwi_time_series.append({"date": d, "NDWI": v})
+
     return {
         "NDVI": veg_stats.get("NDVI"),
         "EVI": veg_stats.get("EVI"),
@@ -140,6 +173,5 @@ def fetchEEData(user, start_date="2024-06-01", end_date="2024-06-30"):
         "temperature_K": temp_val,
         "soil_moisture": soil_val,
         "ndvi_time_series": time_series,
+        "ndwi_time_series": ndwi_time_series,
     }
-
-

@@ -6,7 +6,8 @@ def detect_awd_from_ndwi(ndwi_series, wet_threshold=0.3, dry_threshold=0.2, min_
     cycles = 0
     dry_days = 0
 
-    for val in ndwi_series:
+    for entry in ndwi_series:
+        val = entry["NDWI"]
         if val > wet_threshold:
             if state == "dry":
                 cycles += 1

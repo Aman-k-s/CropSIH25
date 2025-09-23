@@ -1,16 +1,17 @@
+### LOGIN
 POST http://127.0.0.1:8000/login
 Content-Type: application/json
 
 {"username": "admin", "password":"admin"}
 
-###
+### SIGNUP 
 
 POST http://127.0.0.1:8000/signup
 Content-Type: application/json
 
 {"username":"Rakshit", "password":"test", "email":"rakshit3raj@gmail.com"}
 
-###
+### TEST TOKEN
 
 GET http://127.0.0.1:8000/test_token
 Content-Type: application/json
@@ -18,7 +19,7 @@ Authorization: Token d5168cd4b604859db241e89734016b806393e69f
 
 {}
 
-###
+### SET POLYGON
 
 POST http://127.0.0.1:8000/field/set_polygon
 Content-Type: application/json
@@ -40,7 +41,7 @@ Authorization: Token d5168cd4b604859db241e89734016b806393e69f
   "cropType": "Wheat"
 }
 
-###
+### EE SATELLITE DATA
 
 GET http://127.0.0.1:8000/field/ee
 Content-Type: application/json
@@ -48,14 +49,21 @@ Authorization: Token d5168cd4b604859db241e89734016b806393e69f
 
 {}
 
-###
+### GET COORDS
 GET http://127.0.0.1:8000/field/coord
 Content-Type: application/json
 Authorization: Token d5168cd4b604859db241e89734016b806393e69f
 
 {}
 
-###
+### AWD REPORT
+GET http://127.0.0.1:8000/field/awd
+Content-Type: application/json
+Authorization: Token d5168cd4b604859db241e89734016b806393e69f
+
+{}
+
+### PEST DETECTION
 
 POST http://127.0.0.1:8000/pest
 Authorization: Token d5168cd4b604859db241e89734016b806393e69f

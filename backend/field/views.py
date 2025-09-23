@@ -13,7 +13,7 @@ from .utils import fetchEEData
 from django.shortcuts import get_object_or_404
 
 from models.cnn import predict_health
-
+from models.awd import detect_awd_from_ndwi
 
 class FieldDataView(APIView):
     permission_classes=[IsAuthenticated]
@@ -91,3 +91,13 @@ class PestReport(APIView):
         serializer = PestResultSerializer({"result":result})
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+
+class AWDreport(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        data = fetchEEData(request.user)
+        ndwi_data = data["ndwi_time_series"]
+        report = detect_awd_from_ndwi(ndwi_series=ndwi_data)
+        return Response(report)

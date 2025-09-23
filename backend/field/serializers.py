@@ -13,6 +13,11 @@ class FieldDataResponseSerializer(serializers.Serializer):
         allow_empty=True,
         required=False
     )
+    ndwi_time_series = serializers.ListField(
+        child=serializers.DictField(), 
+        allow_empty=True,
+        required=False
+    )
 
 class PestResultSerializer(serializers.Serializer):
     result = serializers.CharField()
