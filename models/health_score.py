@@ -8,7 +8,7 @@ p_cnn_healthy = cnn_result['probability']  # e.g. 0.85 if healthy
 ndvi_latest = float(df_full['ndvi'].values[-1])
 
 #LSTM model
-risk_prob = float(predict_risk_lstm(time_series_data))  # your risk prediction function
+risk_prob = float( predict_risk_from_values(time_series_data))  # your risk prediction function
 
 #FUSION FUNCTION
 def compute_health_score(p_cnn_healthy, ndvi_raw, risk_prob, w1=0.4, w2=0.35, w3=0.25):
