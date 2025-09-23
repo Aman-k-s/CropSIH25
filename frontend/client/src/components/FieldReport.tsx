@@ -24,7 +24,7 @@ import { EEData } from "./EEData";
  * WARNING: any key available to client-side JS is exposed to users. For production,
  * prefer proxying requests through your server so the API key remains secret.
  */
-const API_TOKEN=process.env.AUTH_TOKEN;
+const API_TOKEN = process.env.AUTH_TOKEN;
 
 export function FieldReport() {
   const { t } = useTranslation();
@@ -36,21 +36,23 @@ export function FieldReport() {
 
   const [weather, setWeather] = useState<any>(null);
   const [forecast, setForecast] = useState<any[]>([]);
+  const [pestPrediction, setPestPrediction] = useState(null);
+  const [cropHealth, setCropHealth] = useState<string | string[] | null>(null);
 
   // Fetch coordinates + weather
   useEffect(() => {
     const fetchWeather = async () => {
       try {
         if (!API_TOKEN) {
-          console.warn(
-            "[FieldReport] OpenWeather API key missing"
-          );
+          console.warn("[FieldReport] OpenWeather API key missing");
           return;
         }
 
         // Get first coord from your backend (example endpoint)
-        const coordRes = await fetch("http://localhost:8000/field/coord",  {
-          headers: { Authorization: `Token d5168cd4b604859db241e89734016b806393e69f` },
+        const coordRes = await fetch("http://localhost:8000/field/coord", {
+          headers: {
+            Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
+          },
         });
 
         if (!coordRes.ok) {
@@ -89,7 +91,10 @@ export function FieldReport() {
         );
 
         if (!weatherRes.ok) {
-          console.warn("[FieldReport] OpenWeather current weather failed", weatherRes.status);
+          console.warn(
+            "[FieldReport] OpenWeather current weather failed",
+            weatherRes.status
+          );
           return;
         }
         const weatherData = await weatherRes.json();
@@ -108,7 +113,10 @@ export function FieldReport() {
         if (forecastRes.ok) {
           forecastData = await forecastRes.json();
         } else {
-          console.warn("[FieldReport] forecast fetch failed", forecastRes.status);
+          console.warn(
+            "[FieldReport] forecast fetch failed",
+            forecastRes.status
+          );
         }
 
         // set state
@@ -120,6 +128,59 @@ export function FieldReport() {
     };
 
     fetchWeather();
+  }, []);
+
+  //Pest Prediction
+  useEffect(() => {
+    const fetchPestPrediction = async () => {
+      try {
+        const pestRes = await fetch(
+          "http://localhost:8000/field/pest-predict",
+          {
+            headers: {
+              Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
+            },
+          }
+        );
+
+        if (!pestRes.ok) {
+          console.warn("[FieldReport] pest prediction failed:", pestRes.status);
+          return;
+        }
+
+        const pestData = await pestRes.json();
+        setPestPrediction(pestData); // <-- make sure you added state for this
+      } catch (err) {
+        console.error("Pest prediction fetch error:", err);
+      }
+    };
+
+    fetchPestPrediction();
+  }, []);
+
+  //Crop Health
+  useEffect(() => {
+    const fetchCropHealth = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/field/crop-health", {
+          headers: {
+            Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
+          },
+        });
+
+        if (!res.ok) {
+          console.warn("[FieldReport] crop health fetch failed:", res.status);
+          return;
+        }
+
+        const data = await res.json();
+        setCropHealth(data?.message || data); // try to handle both object or simple text
+      } catch (err) {
+        console.error("Crop health fetch error:", err);
+      }
+    };
+
+    fetchCropHealth();
   }, []);
 
   // Handle multiple file selection
@@ -135,7 +196,8 @@ export function FieldReport() {
 
   // Upload all selected files
   const handleUpload = async () => {
-    if (selectedFiles.length === 0) return alert("Please select at least one file!");
+    if (selectedFiles.length === 0)
+      return alert("Please select at least one file!");
 
     setUploading(true);
     const formData = new FormData();
@@ -167,15 +229,20 @@ export function FieldReport() {
     <div className="p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-foreground">{t("field_report")}</h1>
-        <Button onClick={handlePDFDownload} className="bg-primary hover:bg-primary/90">
+        <h1 className="text-2xl font-bold text-foreground">
+          {t("field_report")}
+        </h1>
+        <Button
+          onClick={handlePDFDownload}
+          className="bg-primary hover:bg-primary/90"
+        >
           <Download className="mr-2 h-4 w-4" />
           {t("print_pdf")}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* AI Analysis Card */}
+        {/* AI Analysis (Full width) */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -186,12 +253,16 @@ export function FieldReport() {
           <CardContent>
             <div className="space-y-4">
               <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">{t("analysis_result")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("analysis_result")}
+                </p>
               </div>
               <div className="flex space-x-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">85%</div>
-                  <div className="text-xs text-muted-foreground">{t("health_score")}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {t("health_score")}
+                  </div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-accent">0.7</div>
@@ -202,7 +273,7 @@ export function FieldReport() {
           </CardContent>
         </Card>
 
-        {/* Data Sources Grid */}
+        {/* Left column: EE + Weather */}
         <div className="space-y-4">
           <EEData />
 
@@ -211,7 +282,9 @@ export function FieldReport() {
             <CardContent className="p-4">
               <div className="flex items-center mb-3">
                 <Cloud className="mr-2 h-4 w-4 text-card-foreground" />
-                <h4 className="font-medium text-card-foreground">{t("weather_data")}</h4>
+                <h4 className="font-medium text-card-foreground">
+                  {t("weather_data")}
+                </h4>
               </div>
               <div className="bg-accent/10 rounded-lg p-4 space-y-3">
                 {weather ? (
@@ -222,7 +295,8 @@ export function FieldReport() {
                           {weather.weather?.[0]?.description}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {weather.main?.temp}°C, {weather.main?.humidity}% humidity
+                          {weather.main?.temp}°C, {weather.main?.humidity}%
+                          humidity
                         </p>
                       </div>
                       <div className="text-2xl">
@@ -230,7 +304,9 @@ export function FieldReport() {
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm font-medium">Avoid irrigation tomorrow, as it might rain tomorrow</p>
+                      <p className="text-sm font-medium">
+                        Avoid irrigation tomorrow, as it might rain tomorrow
+                      </p>
                       <ul className="mt-2 space-y-1 text-sm">
                         {forecast.map((f, i) => (
                           <li key={i} className="flex justify-between">
@@ -254,7 +330,7 @@ export function FieldReport() {
           </Card>
         </div>
 
-        {/* Pest Detection Card */}
+        {/* Right column: Pest Detection */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -276,18 +352,31 @@ export function FieldReport() {
               </div>
               <label className="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
                 {t("select_photos")}
-                <input type="file" accept="image/*" multiple onChange={handleFilesChange} className="hidden" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFilesChange}
+                  className="hidden"
+                />
               </label>
-              <Button size="sm" className="bg-accent hover:bg-accent/90" onClick={handleUpload} disabled={uploading || selectedFiles.length === 0}>
+              <Button
+                size="sm"
+                className="bg-accent hover:bg-accent/90"
+                onClick={handleUpload}
+                disabled={uploading || selectedFiles.length === 0}
+              >
                 <Camera className="mr-2 h-4 w-4" />
                 {uploading ? "Uploading..." : t("scan")}
               </Button>
-              {result && <p className="text-sm text-muted-foreground mt-2">{result}</p>}
+              {result && (
+                <p className="text-sm text-muted-foreground mt-2">{result}</p>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Soil Health Card */}
+        {/* Left column: Soil Health */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -312,8 +401,90 @@ export function FieldReport() {
                 </div>
               </div>
               <div className="p-4 bg-primary/10 rounded-lg">
-                <p className="text-sm text-primary font-medium">{t("fertilizer_recommendation")}</p>
+                <p className="text-sm text-primary font-medium">
+                  {t("fertilizer_recommendation")}
+                </p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Right column: Pest Prediction */}
+        {/*  backend will be returning something like this 
+      [
+  { "name": "Aphids", "probability": 85 },
+  { "name": "Leaf Miner", "probability": 60 }
+] 
+ */}
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center mb-3">
+              <Bug className="mr-2 h-4 w-4 text-card-foreground" />
+              <h4 className="font-medium text-card-foreground">
+                {t("Pest Prediction")}
+              </h4>
+            </div>
+            <div className="bg-accent/10 rounded-lg p-4 space-y-3">
+              {pestPrediction ? (
+                <>
+                  <div className="flex flex-col space-y-2">
+                    {pestPrediction.map((item: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between border-b border-accent/20 pb-2"
+                      >
+                        <span className="font-medium text-accent">
+                          {item.name}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {item.probability}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">loading...</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Full width: Crop Health */}
+        <Card className="lg:col-span-2">
+          <CardContent className="p-4">
+            <div className="flex items-center mb-3">
+              <Beaker className="mr-2 h-4 w-4 text-card-foreground" />
+              <h4 className="font-medium text-card-foreground">
+                {t("Crop Health")}
+              </h4>
+            </div>
+            <div className="bg-accent/10 rounded-lg p-4 space-y-3">
+              {cropHealth ? (
+                <>
+                  <div className="flex flex-col space-y-2">
+                    {Array.isArray(cropHealth) ? (
+                      cropHealth.map((item: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="border-b border-accent/20 pb-2"
+                        >
+                          <p className="text-sm text-muted-foreground">
+                            {item}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        {cropHealth}
+                      </p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">loading...</p>
+              )}
             </div>
           </CardContent>
         </Card>
