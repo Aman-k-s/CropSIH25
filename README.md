@@ -52,7 +52,7 @@ pip install --only-binary :all: -r backend/requirements.txt
 4. **Authenticate Google Earth Engine** (one-time setup):
 
 ```bash
-earthengine authenticate
+earthengine authenticatepy
 ```
 
 Follow the instructions to allow access.

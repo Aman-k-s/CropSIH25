@@ -1,13 +1,39 @@
+import torch
+import torch.nn as nn
+from torchvision import models, transforms
 from PIL import Image
-
-def predict_health(img_path):
-    img = Image.open(img_path).convert("RGB")
-    img = transform(img).unsqueeze(0).to(DEVICE)
+def load_model(model_path="crop_health_model.pth", device="cpu"):
+    model = models.mobilenet_v2(weights=None)
+    model.classifier[1] = nn.Linear(model.last_channel, 1)
+    model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
+    return model.to(device)
+
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406],   # ImageNet mean
+                         [0.229, 0.224, 0.225])   # ImageNet std
+])
+
+# Prediction Function
+
+def predict_health(img_path, model, device="cpu"):
+    img = Image.open(img_path).convert("RGB")
+    img = transform(img).unsqueeze(0).to(device)
+
     with torch.no_grad():
         output = model(img)
         prob = torch.sigmoid(output).item()
-    return {"probability": prob, "class": "Healthy" if prob > 0.5 else "Stressed"}
-# test
-# test_img = '/content/drive/MyDrive/Crop_data/Healthy/sample1.jpg'
-# print(predict_health(test_img))
+
+    return {
+        "probability": float(prob),
+        "class": "Healthy" if prob > 0.5 else "Stressed"
+    }
+# # Testing
+# if __name__ == "__main__":
+#     device = "cuda" if torch.cuda.is_available() else "cpu"
+#     model = load_model("crop_health_model.pth", device)
+
+#     result = predict_health("test_leaf.jpg", model, device)
+#     print(result)

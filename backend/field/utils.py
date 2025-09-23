@@ -141,3 +141,5 @@ def fetchEEData(user, start_date="2024-06-01", end_date="2024-06-30"):
         "soil_moisture": soil_val,
         "ndvi_time_series": time_series,
     }
+
+
