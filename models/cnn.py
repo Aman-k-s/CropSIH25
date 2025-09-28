@@ -3,7 +3,7 @@ import torch.nn as nn
 from torchvision import models, transforms
 from PIL import Image
 
-def load_model(model_path="crop_health_model.pth", device="cpu"):
+def load_model(model_path="models\crop_health_model.pth", device="cpu"):
     model = models.mobilenet_v2(weights=None)
     model.classifier[1] = nn.Linear(model.last_channel, 1)
     model.load_state_dict(torch.load(model_path, map_location=device))
@@ -18,7 +18,7 @@ transform = transforms.Compose([
 ])
 
 DEVICE = "cpu"
-MODEL_PATH = "crop_health_model.pth"
+MODEL_PATH = "../models/crop_health_model.pth"
 model = load_model(MODEL_PATH, DEVICE)
 
 # Inference function
@@ -32,7 +32,7 @@ def predict_health(img_path, device=DEVICE):
 
     return {
         "probability": float(prob),
-        "class": "Healthy" if prob > 0.5 else "Stressed"
+        "class": "Healthy" if prob > 0.5 else "Infested"
     }
 
 # # Testing
