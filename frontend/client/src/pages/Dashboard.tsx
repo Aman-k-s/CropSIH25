@@ -6,6 +6,8 @@ import { DataAnalytics } from '@/components/DataAnalytics';
 import { ChatBot } from '@/components/ChatBot';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
+import { Pest } from '@/components/Pest';
+import { FieldLog } from '@/components/FieldLog';
 import MapView from "@/components/MapView";
 
 
@@ -21,6 +23,10 @@ export default function Dashboard() {
         return <MyField />;
       case 'data-analytics':
         return <DataAnalytics />;
+      case 'pest':
+        return <Pest />
+      case 'field-log':
+        return <FieldLog />
       default:
         return <FieldReport />;
     }

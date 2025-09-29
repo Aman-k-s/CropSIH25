@@ -93,7 +93,7 @@ export default function MapView({ cropType }: { cropType: string }) {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const centerPosition: [number, number] = [28.6139, 77.209]; // Delhi
+  const centerPosition: [number, number] = [9.1632, 76.6413]; // Kerala
 
   const handleMapClick = (latlng: any) => {
     if (isDrawing) {
@@ -202,7 +202,7 @@ export default function MapView({ cropType }: { cropType: string }) {
       </div>
 
       <div className="map-container">
-        <MapContainer center={centerPosition} zoom={13} style={{ height: "100%", width: "100%" }}>
+        <MapContainer center={centerPosition} zoom={8} style={{ height: "100%", width: "100%" }}>
           <SearchControl />
           <MapTypeControl mapType={mapType} setMapType={setMapType} />
           <TileLayer
