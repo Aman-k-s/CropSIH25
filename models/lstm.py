@@ -17,8 +17,8 @@ class RiskLSTM(nn.Module):
         return self.act(out)
 
 DEVICE = "cpu"
-MODEL_PATH = "models/risk_lstm_final.pth"
-SCALER_PATH = "models/risk_scaler.save"
+MODEL_PATH = "../models/risk_lstm_final.pth"
+SCALER_PATH = "../models/risk_scaler.save"
 
 def load_risk_model(model_path=MODEL_PATH, scaler_path=SCALER_PATH, device=DEVICE):
     model = RiskLSTM(input_size=4, hidden_size=64, num_layers=2).to(device)

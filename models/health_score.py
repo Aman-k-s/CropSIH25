@@ -1,6 +1,6 @@
 import numpy as np
-from cnn import predict_health
-from lstm import predict_risk_from_values
+from models.cnn import predict_health
+from models.lstm import predict_risk_from_values
 
 #Fusion Function
 def compute_health_score(p_cnn_healthy, ndvi_raw, risk_prob, w1=0.4, w2=0.35, w3=0.25):
