@@ -2,6 +2,10 @@ import ee
 from django.shortcuts import get_object_or_404
 from .models import FieldData
 
+from shapely.geometry import Polygon
+from pyproj import CRS, Transformer
+from shapely.ops import transform
+
 def fetchEEData(user, start_date="2024-06-01", end_date="2024-06-30"):
     """
     Fetch vegetation indices, rainfall, temperature, soil moisture,
@@ -175,3 +179,24 @@ def fetchEEData(user, start_date="2024-06-01", end_date="2024-06-30"):
         "ndvi_time_series": time_series,
         "ndwi_time_series": ndwi_time_series,
     }
+
+
+def calculate_area_in_hectares(coords_list):
+    
+    # Create a shapely Polygon object from the coordinates
+    polygon_geom = Polygon(coords_list)
+
+    # Define the source (WGS 84 / EPSG:4326) and target (UTM Zone 43N / EPSG:32643)
+    # This projection converts the coordinates to a meter-based system.
+    project = Transformer.from_crs("EPSG:4326", "EPSG:32643", always_xy=True).transform
+
+    # Apply the projection to the polygon
+    projected_polygon = transform(project, polygon_geom)
+
+    # Get the area in square meters from the projected polygon
+    area_sq_meters = projected_polygon.area
+    
+    # Convert square meters to hectares (1 hectare = 10,000 m²)
+    area_hectares = area_sq_meters / 10000
+
+    return area_hectares

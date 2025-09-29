@@ -21,7 +21,7 @@ Authorization: Token d5168cd4b604859db241e89734016b806393e69f
 
 ### SET POLYGON
 
-POST http://127.0.0.1:8000/field/set_polygon
+POST http://127.0.0.1:8000/field/set_field
 Content-Type: application/json
 Authorization: Token d5168cd4b604859db241e89734016b806393e69f
 
@@ -56,13 +56,6 @@ Authorization: Token d5168cd4b604859db241e89734016b806393e69f
 
 {}
 
-### AWD REPORT
-GET http://127.0.0.1:8000/field/awd
-Content-Type: application/json
-Authorization: Token d5168cd4b604859db241e89734016b806393e69f
-
-{}
-
 ### PEST DETECTION
 
 POST http://127.0.0.1:8000/pest
@@ -75,3 +68,31 @@ Content-Type: image/jpeg
 
 < ./sample.jpg
 --WebAppBoundary--
+
+### AWD REPORT
+GET http://127.0.0.1:8000/field/awd
+Content-Type: application/json
+Authorization: Token d5168cd4b604859db241e89734016b806393e69f
+
+{}
+
+### Carbon Credit
+GET http://127.0.0.1:8000/field/cc
+Content-Type: application/json
+Authorization: Token d5168cd4b604859db241e89734016b806393e69f
+
+{}
+
+### Pest Prediction
+GET http://127.0.0.1:8000/field/pestpredict
+Content-Type: application/json
+Authorization: Token d5168cd4b604859db241e89734016b806393e69f
+
+{}
+
+### Health Score
+GET http://127.0.0.1:8000/field/healthscore
+Content-Type: application/json
+Authorization: Token d5168cd4b604859db241e89734016b806393e69f
+
+{}

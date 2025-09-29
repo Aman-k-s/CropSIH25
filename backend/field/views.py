@@ -9,9 +9,12 @@ from .models import FieldData, Pest
 from .serializers import (
     FieldDataResponseSerializer, PestResultSerializer
 )
-from .utils import fetchEEData
+from .utils import fetchEEData, calculate_area_in_hectares
 from django.shortcuts import get_object_or_404
 
+from models.health_score import get_health_score
+from models.lstm import predict_risk_from_values
+from models.cc import calculate_carbon_metrics
 from models.cnn import predict_health
 from models.awd import detect_awd_from_ndwi
 
@@ -77,7 +80,16 @@ class getCoord(APIView):
         first_coord = coords[0][0] if coords and coords[0] else None
 
         return Response({"coord": first_coord})
-    
+
+# get coordinates list
+def get_polygon(user):
+    try:
+        field_data = get_object_or_404(FieldData, user=user)
+        return field_data.polygon
+    except:
+        return None
+
+        
 class PestReport(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -87,6 +99,7 @@ class PestReport(APIView):
             image = request.FILES["image"]
         )
         
+        # cnn.py
         result = predict_health(uploaded.image.path)
         serializer = PestResultSerializer({"result":result})
 
@@ -99,5 +112,42 @@ class AWDreport(APIView):
     def get(self, request):
         data = fetchEEData(request.user)
         ndwi_data = data["ndwi_time_series"]
+
+        # awd.py
         report = detect_awd_from_ndwi(ndwi_series=ndwi_data)
         return Response(report)
+    
+class CarbonCredit(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        ndwi_data=fetchEEData(request.user)['ndwi_time_series']
+        # awd.py
+        awd = detect_awd_from_ndwi(ndwi_series=ndwi_data)["awd_detected"]
+
+        polygon = get_polygon(user=request.user)
+        # utils.py
+        area = calculate_area_in_hectares(polygon['coordinates'][0])
+
+        # cc.py
+        result = calculate_carbon_metrics(area_hectare=area,ndwi_based_awd=awd)
+        return Response(result)
+    
+class PestPrediction(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # lstm.py
+        data = fetchEEData(request.user)
+        result = predict_risk_from_values(data)
+        return Response(result)
+    
+class HealthScore(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        data = fetchEEData(request.user)
+
+        # health_score.py
+        result = get_health_score(image_path='../sample.jpg', ndvi_latest=data['ndwi_time_series'], sequence=data)
+        return Response(result)
