@@ -12,13 +12,17 @@ def calculate_carbon_metrics(area_hectare: float,
         actual_water_mm = baseline_water_mm * (1 - 0.35)  # 35% less water
     else:
         actual_water_mm = baseline_water_mm
+        water_saved_mm = 0  # no saving if AWD not used
 
     water_saved_mm = baseline_water_mm - actual_water_mm
     water_saved_cubic_m = water_saved_mm * area_hectare * 10  # mm to cubic meters
 
     # 2. Methane reduction
     methane_baseline = ch4_baseline_per_day * area_hectare * crop_days
-    methane_reduction_kg = methane_baseline * awd_reduction_factor if ndwi_based_awd else 0
+    if ndwi_based_awd:
+        methane_reduction_kg = methane_baseline - awd_reduction_factor
+    else:
+        methane_reduction_kg = methane_baseline
 
     # 3. CO2e reduction
     co2e_reduction_kg = methane_reduction_kg * ch4_to_co2e
@@ -37,6 +41,8 @@ def calculate_carbon_metrics(area_hectare: float,
         "carbon_credits": round(carbon_credits, 3),
         "estimated_value_inr": round(estimated_value_inr, 2),
         "awd_detected": ndwi_based_awd}
+
+
 
 #AWD mai variation chaiye toh yeh wala use krna
 

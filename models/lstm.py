@@ -33,11 +33,30 @@ risk_model, risk_scaler = load_risk_model(MODEL_PATH, SCALER_PATH, DEVICE)
 # Inference function
 def predict_risk_from_values(sequence, device=DEVICE):
     """
-    sequence: each element = [ndvi, rainfall, temperature, humidity]
-              
+    sequence: 
+      - Case 1: list of [ndvi, rainfall, temp, humidity]
+      - Case 2: backend JSON dict (with ndvi_time_series, etc.)
     """
-    seq_array = np.array(sequence).astype(np.float32)
-    seq_scaled = risk_scaler.transform(seq_array)   # normalize
+    if isinstance(sequence, dict):
+        payload = sequence
+        ndvi_series = payload.get("ndvi_time_series", [])
+        seq_array = []
+
+       
+        temp_c = payload.get("temperature_K", 300) - 273.15
+
+    
+        for row in ndvi_series:
+            ndvi = row.get("NDVI", 0.0)
+            rainfall = payload.get("rainfall_mm", 0.0) or 0.0
+            humidity = payload.get("soil_moisture", 0.0) or 0.0
+            seq_array.append([ndvi, rainfall, temp_c, humidity])
+    else:
+        seq_array = sequence
+
+    seq_array = np.array(seq_array).astype(np.float32)
+    seq_scaled = risk_scaler.transform(seq_array)
+
     input_tensor = torch.tensor(seq_scaled).unsqueeze(0).to(device)  # (1, seq_len, features)
 
     with torch.no_grad():
@@ -47,3 +66,5 @@ def predict_risk_from_values(sequence, device=DEVICE):
         "risk_probability": prob,
         "risk_level": "High" if prob > 0.5 else "Low"
     }
+
+# result = predict_risk_from_values(# JSON wala data)
