@@ -65,9 +65,9 @@ export function MyField() {
         </div>
 
         {/* Right Column: Crop, Soil, Irrigation stacked vertically */}
-        <div className="flex flex-col space-y-6">
+        <div className="flex flex-col space-y-6 mt-8">
           {/* Crop Selection */}
-          <Card>
+          <Card className="mt-8">
             <CardHeader>
               <CardTitle>{t("crop_type")}</CardTitle>
             </CardHeader>

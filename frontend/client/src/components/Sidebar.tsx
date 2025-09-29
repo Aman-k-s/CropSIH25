@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Sprout, BarChart3, Map, User, Globe, BarChart2 } from 'lucide-react';
+import { Sprout, BarChart3, Map, User, Globe, BarChart2 ,LandPlot,ChartLine, BugOff,CalendarDays } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -15,10 +15,10 @@ export function Sidebar({ activeTab, onTabChange, className = '' }: SidebarProps
 
   const tabs = [
     { id: 'field-report', icon: BarChart3, label: t('field_report') },
-    { id: 'my-field', icon: Map, label: t('my_field') },
-    { id: 'data-analytics', icon: BarChart2, label: t('data_analytics') },
-    { id: 'field-log', icon: BarChart3, label: t('field_log') },
-    { id: 'pest', icon: BarChart3, label: t('pest') },
+    { id: 'my-field', icon: LandPlot, label: t('my_field') },
+    { id: 'data-analytics', icon: ChartLine, label: t('data_analytics') },
+    { id: 'field-log', icon: CalendarDays, label: t('field_log') },
+    { id: 'pest', icon: BugOff, label: t('pest') },
   ];
 
   return (
