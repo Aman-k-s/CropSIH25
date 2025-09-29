@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Sprout, BarChart3, Map, User, Globe } from 'lucide-react';
+import { Sprout, BarChart3, Map, User, Globe, BarChart2 ,LandPlot,ChartLine, BugOff,CalendarDays } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -15,8 +15,10 @@ export function Sidebar({ activeTab, onTabChange, className = '' }: SidebarProps
 
   const tabs = [
     { id: 'field-report', icon: BarChart3, label: t('field_report') },
-    { id: 'my-field', icon: Map, label: t('my_field') },
-    { id: 'data-analytics', icon: BarChart3, label: t('data_analytics') },
+    { id: 'my-field', icon: LandPlot, label: t('my_field') },
+    { id: 'data-analytics', icon: ChartLine, label: t('data_analytics') },
+    { id: 'field-log', icon: CalendarDays, label: t('field_log') },
+    { id: 'pest', icon: BugOff, label: t('pest') },
   ];
 
   return (
@@ -27,7 +29,7 @@ export function Sidebar({ activeTab, onTabChange, className = '' }: SidebarProps
           <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
             <Sprout className="text-primary text-xl" />
           </div>
-          <span className="text-xl font-bold">Krishi Saarthi</span>
+          <span className="text-xl font-bold">Krishi Sakhi</span>
         </div>
         
         {/* Navigation Menu */}
@@ -62,6 +64,7 @@ export function Sidebar({ activeTab, onTabChange, className = '' }: SidebarProps
               <SelectItem value="en">English</SelectItem>
               <SelectItem value="hi">हिंदी</SelectItem>
               <SelectItem value="pa">ਪੰਜਾਬੀ</SelectItem>
+              <SelectItem value="ml">മലയാളം</SelectItem>
             </SelectContent>
           </Select>
         </div>

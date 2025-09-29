@@ -29,15 +29,39 @@ const API_TOKEN = process.env.AUTH_TOKEN;
 export function FieldReport() {
   const { t } = useTranslation();
 
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
-
   const [weather, setWeather] = useState<any>(null);
   const [forecast, setForecast] = useState<any[]>([]);
-  const [pestPrediction, setPestPrediction] = useState(null);
   const [cropHealth, setCropHealth] = useState<string | string[] | null>(null);
+
+  const [soilInputs, setSoilInputs] = useState({
+  N: "",
+  P: "",
+  K: "",
+  pH: "",
+});
+const [soilSubmitted, setSoilSubmitted] = useState(false);
+const handleSoilChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setSoilInputs({ ...soilInputs, [e.target.name]: e.target.value });
+};
+
+const handleSoilSubmit = () => {
+  setSoilSubmitted(true);
+};
+
+// Placeholder advice logic
+const getSoilAdvice = () => {
+  const adviceList: string[] = [];
+  if (+soilInputs.pH < 6) adviceList.push("Soil is acidic. Consider liming.");
+  else if (+soilInputs.pH > 7.5) adviceList.push("Soil is alkaline. Consider organic matter.");
+
+  if (+soilInputs.N < 100) adviceList.push("Nitrogen is low. Add N fertilizer.");
+  if (+soilInputs.P < 50) adviceList.push("Phosphorus is low. Add P fertilizer.");
+  if (+soilInputs.K < 50) adviceList.push("Potassium is low. Add K fertilizer.");
+
+  if (adviceList.length === 0) adviceList.push("Soil nutrients are adequate.");
+  return adviceList;
+};
+
 
   // Fetch coordinates + weather
   useEffect(() => {
@@ -130,34 +154,6 @@ export function FieldReport() {
     fetchWeather();
   }, []);
 
-  //Pest Prediction
-  useEffect(() => {
-    const fetchPestPrediction = async () => {
-      try {
-        const pestRes = await fetch(
-          "http://localhost:8000/field/pest-predict",
-          {
-            headers: {
-              Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
-            },
-          }
-        );
-
-        if (!pestRes.ok) {
-          console.warn("[FieldReport] pest prediction failed:", pestRes.status);
-          return;
-        }
-
-        const pestData = await pestRes.json();
-        setPestPrediction(pestData); // <-- make sure you added state for this
-      } catch (err) {
-        console.error("Pest prediction fetch error:", err);
-      }
-    };
-
-    fetchPestPrediction();
-  }, []);
-
   //Crop Health
   useEffect(() => {
     const fetchCropHealth = async () => {
@@ -183,44 +179,6 @@ export function FieldReport() {
     fetchCropHealth();
   }, []);
 
-  // Handle multiple file selection
-  const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const filesArray = Array.from(e.target.files);
-    setSelectedFiles(filesArray);
-    setPreviews(filesArray.map((file) => URL.createObjectURL(file)));
-
-    // Placeholder pest detection response
-    setResult(t("pest_detected"));
-  };
-
-  // Upload all selected files
-  const handleUpload = async () => {
-    if (selectedFiles.length === 0)
-      return alert("Please select at least one file!");
-
-    setUploading(true);
-    const formData = new FormData();
-    selectedFiles.forEach((file) => formData.append("images", file));
-
-    try {
-      const response = await fetch("http://localhost:5000/api/pest-detection", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error("Upload failed");
-
-      const data = await response.json();
-      setResult(data.message || t("pest_detected"));
-    } catch (error: any) {
-      console.error(error);
-      alert(error.message || "Something went wrong");
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const handlePDFDownload = () => {
     alert("Feature soon to be implemented. PDF Generation");
   };
@@ -242,42 +200,61 @@ export function FieldReport() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* AI Analysis (Full width) */}
+        {/* Top: AI Crop Analysis full width */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Bot className="mr-2 h-5 w-5 text-primary" />
-              {t("ai_analysis")}
+              AI Crop Analysis
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  {t("analysis_result")}
-                </p>
-              </div>
-              <div className="flex space-x-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">85%</div>
-                  <div className="text-xs text-muted-foreground">
-                    {t("health_score")}
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Sidebar: 30% */}
+              <div className="lg:w-1/3 bg-muted/50 p-4 rounded-lg space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="text-center p-2 bg-white rounded shadow">
+                    <div className="text-3xl font-bold text-primary">85%</div>
+                    <div className="text-sm text-muted-foreground">
+                      Health Score
+                    </div>
+                  </div>
+                  <div className="text-center p-2 bg-white rounded shadow">
+                    <div className="text-2xl font-bold text-secondary">1.2</div>
+                    <div className="text-sm text-muted-foreground">Stress</div>
                   </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-accent">0.7</div>
-                  <div className="text-xs text-muted-foreground">NDVI</div>
-                </div>
+              </div>
+
+              {/* Main Content: 70% */}
+              <div className="lg:w-2/3 bg-muted/50 p-4 rounded-lg space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Satellite imagery indicates healthy vegetation across the
+                  majority of the field. Minor dry patches observed in the
+                  northeast section. Pest activity detected in low intensity
+                  areas.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Soil moisture levels are adequate with slight variability.
+                  Fertilizer application is recommended in low nutrient zones.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Overall crop health is stable. No immediate intervention
+                  required except monitoring water and pest levels.
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Left column: EE + Weather */}
-        <div className="space-y-4">
-          <EEData />
+        {/* Left Column: Field Summary (EEData) full height */}
+        <div className="flex flex-col space-y-4 h-[calc(100vh-96px)]">
+          <EEData className="flex-1" />
+        </div>
 
-          {/* Weather Card */}
+        {/* Right Column */}
+        <div className="flex flex-col space-y-4">
+          {/* Weather Card on top */}
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center mb-3">
@@ -328,166 +305,88 @@ export function FieldReport() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Soil Health / Fertilizer below Weather */}
+          <Card>
+  <CardHeader>
+    <CardTitle className="flex items-center text-lg font-semibold">
+      <Beaker className="mr-2 h-5 w-5" />
+      Soil Health & Fertilizer Input
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    {!soilSubmitted ? (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          {["N", "P", "K", "pH"].map((key) => (
+            <div key={key} className="flex flex-col">
+              <label className="text-sm font-medium text-muted-foreground">
+                {key} Value
+              </label>
+              <input
+                type="number"
+                name={key}
+                value={(soilInputs as any)[key]}
+                onChange={handleSoilChange}
+                className="border rounded px-2 py-1"
+                placeholder={`Enter ${key}`}
+                step={key === "pH" ? "0.1" : "1"}
+              />
+            </div>
+          ))}
+        </div>
+        <Button
+          onClick={handleSoilSubmit}
+          className="bg-primary text-white hover:bg-primary/90"
+        >
+          Submit
+        </Button>
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {/* Display all 4 values in a single row */}
+        <div className="flex justify-between gap-4 text-center">
+          <div className="flex-1 p-3 bg-primary/10 rounded-lg">
+            <div className="text-lg font-bold text-primary">{soilInputs.pH}</div>
+            <div className="text-xs text-muted-foreground">pH</div>
+          </div>
+          <div className="flex-1 p-3 bg-secondary/10 rounded-lg">
+            <div className="text-lg font-bold text-secondary">{soilInputs.N}</div>
+            <div className="text-xs text-muted-foreground">N (kg/ha)</div>
+          </div>
+          <div className="flex-1 p-3 bg-accent/10 rounded-lg">
+            <div className="text-lg font-bold text-accent">{soilInputs.P}</div>
+            <div className="text-xs text-muted-foreground">P (kg/ha)</div>
+          </div>
+          <div className="flex-1 p-3 bg-amber-10 rounded-lg">
+            <div className="text-lg font-bold text-amber-700">{soilInputs.K}</div>
+            <div className="text-xs text-muted-foreground">K (kg/ha)</div>
+          </div>
         </div>
 
-        {/* Right column: Pest Detection */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Bug className="mr-2 h-5 w-5" />
-              {t("pest_detection")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center space-y-3 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
-              <div className="flex flex-wrap gap-2">
-                {previews.map((url, idx) => (
-                  <img
-                    key={idx}
-                    src={url}
-                    alt={`Crop ${idx}`}
-                    className="w-24 h-24 object-cover rounded-lg border"
-                  />
-                ))}
-              </div>
-              <label className="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-                {t("select_photos")}
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleFilesChange}
-                  className="hidden"
-                />
-              </label>
-              <Button
-                size="sm"
-                className="bg-accent hover:bg-accent/90"
-                onClick={handleUpload}
-                disabled={uploading || selectedFiles.length === 0}
-              >
-                <Camera className="mr-2 h-4 w-4" />
-                {uploading ? "Uploading..." : t("scan")}
-              </Button>
-              {result && (
-                <p className="text-sm text-muted-foreground mt-2">{result}</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Advice Section */}
+        <div className="p-4 bg-yellow-50 rounded-lg">
+          <h4 className="text-sm font-semibold mb-2">Advice:</h4>
+          <ul className="list-disc pl-5 text-sm text-muted-foreground">
+            {getSoilAdvice().map((a, idx) => (
+              <li key={idx}>{a}</li>
+            ))}
+          </ul>
+        </div>
 
-        {/* Left column: Soil Health */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Beaker className="mr-2 h-5 w-5" />
-              {t("soil_health")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <div className="text-lg font-bold text-primary">6.5</div>
-                  <div className="text-xs text-muted-foreground">pH</div>
-                </div>
-                <div className="p-3 bg-secondary/10 rounded-lg">
-                  <div className="text-lg font-bold text-secondary">120</div>
-                  <div className="text-xs text-muted-foreground">N (kg/ha)</div>
-                </div>
-                <div className="p-3 bg-accent/10 rounded-lg">
-                  <div className="text-lg font-bold text-accent">45</div>
-                  <div className="text-xs text-muted-foreground">P (kg/ha)</div>
-                </div>
-              </div>
-              <div className="p-4 bg-primary/10 rounded-lg">
-                <p className="text-sm text-primary font-medium">
-                  {t("fertilizer_recommendation")}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <Button
+          onClick={() => setSoilSubmitted(false)}
+          className="bg-gray-200 hover:bg-gray-300"
+        >
+          Edit
+        </Button>
+      </div>
+    )}
+  </CardContent>
+</Card>
 
-        {/* Right column: Pest Prediction */}
-        {/*  backend will be returning something like this 
-      [
-  { "name": "Aphids", "probability": 85 },
-  { "name": "Leaf Miner", "probability": 60 }
-] 
- */}
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center mb-3">
-              <Bug className="mr-2 h-4 w-4 text-card-foreground" />
-              <h4 className="font-medium text-card-foreground">
-                {t("Pest Prediction")}
-              </h4>
-            </div>
-            <div className="bg-accent/10 rounded-lg p-4 space-y-3">
-              {pestPrediction ? (
-                <>
-                  <div className="flex flex-col space-y-2">
-                    {pestPrediction.map((item: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="flex justify-between border-b border-accent/20 pb-2"
-                      >
-                        <span className="font-medium text-accent">
-                          {item.name}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {item.probability}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">loading...</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Full width: Crop Health */}
-        <Card className="lg:col-span-2">
-          <CardContent className="p-4">
-            <div className="flex items-center mb-3">
-              <Beaker className="mr-2 h-4 w-4 text-card-foreground" />
-              <h4 className="font-medium text-card-foreground">
-                {t("Crop Health")}
-              </h4>
-            </div>
-            <div className="bg-accent/10 rounded-lg p-4 space-y-3">
-              {cropHealth ? (
-                <>
-                  <div className="flex flex-col space-y-2">
-                    {Array.isArray(cropHealth) ? (
-                      cropHealth.map((item: any, idx: number) => (
-                        <div
-                          key={idx}
-                          className="border-b border-accent/20 pb-2"
-                        >
-                          <p className="text-sm text-muted-foreground">
-                            {item}
-                          </p>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        {cropHealth}
-                      </p>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">loading...</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );
