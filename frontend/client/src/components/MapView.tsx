@@ -55,7 +55,8 @@ function MapTypeControl({
         div.style.fontSize = "14px";
         div.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
         div.innerHTML = mapType === "street" ? "🛰️ Satellite" : "🌍 Street";
-        div.onclick = () => setMapType(mapType === "street" ? "satellite" : "street");
+        div.onclick = () =>
+          setMapType(mapType === "street" ? "satellite" : "street");
         L.DomEvent.disableClickPropagation(div);
         return div;
       },
@@ -85,7 +86,15 @@ function SearchControl() {
 }
 
 // ================= Main Component =================
-export default function MapView({ cropType }: { cropType: string }) {
+export default function MapView({
+  cropType,
+  soilType,
+  irrigationType,
+}: {
+  cropType: string;
+  soilType: string;
+  irrigationType: string;
+}) {
   const [farmPolygon, setFarmPolygon] = useState<any[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [farmArea, setFarmArea] = useState(0);
@@ -104,7 +113,9 @@ export default function MapView({ cropType }: { cropType: string }) {
       if (newPolygon.length >= 3) {
         const coords = newPolygon.map((p) => [p[1], p[0]]);
         coords.push(coords[0]);
-        setFarmArea(Number((turf.area(turf.polygon([coords])) / 10000).toFixed(2)));
+        setFarmArea(
+          Number((turf.area(turf.polygon([coords])) / 10000).toFixed(2))
+        );
       }
     }
   };
@@ -121,7 +132,9 @@ export default function MapView({ cropType }: { cropType: string }) {
       setIsDrawing(false);
       const coords = farmPolygon.map((p) => [p[1], p[0]]);
       coords.push(coords[0]);
-      setFarmArea(Number((turf.area(turf.polygon([coords])) / 10000).toFixed(2)));
+      setFarmArea(
+        Number((turf.area(turf.polygon([coords])) / 10000).toFixed(2))
+      );
     } else alert("Please select at least 3 points!");
   };
   const clearFarm = () => {
@@ -159,6 +172,8 @@ export default function MapView({ cropType }: { cropType: string }) {
     const farmData = {
       polygon: polygonGeoJSON,
       cropType: cropType,
+      soilType: soilType,
+      irrigationType: irrigationType,
       area: farmArea,
     };
 
@@ -195,20 +210,46 @@ export default function MapView({ cropType }: { cropType: string }) {
   return (
     <div className="mapview-container">
       <div className="toolbar">
-        <button className="btn btn-green-700" onClick={startDrawing} disabled={isDrawing}>Start</button>
-        <button className="btn btn-green-600" onClick={undoLastPoint} disabled={!isDrawing || farmPolygon.length === 0}>Undo</button>
-        <button className="btn btn-green-500" onClick={finishDrawing} disabled={!isDrawing || farmPolygon.length < 3}>Finish</button>
-        <button className="btn btn-green-800" onClick={clearFarm}>Clear</button>
+        <button
+          className="btn btn-green-700"
+          onClick={startDrawing}
+          disabled={isDrawing}
+        >
+          Start
+        </button>
+        <button
+          className="btn btn-green-600"
+          onClick={undoLastPoint}
+          disabled={!isDrawing || farmPolygon.length === 0}
+        >
+          Undo
+        </button>
+        <button
+          className="btn btn-green-500"
+          onClick={finishDrawing}
+          disabled={!isDrawing || farmPolygon.length < 3}
+        >
+          Finish
+        </button>
+        <button className="btn btn-green-800" onClick={clearFarm}>
+          Clear
+        </button>
       </div>
 
       <div className="map-container">
-        <MapContainer center={centerPosition} zoom={8} style={{ height: "100%", width: "100%" }}>
+        <MapContainer
+          center={centerPosition}
+          zoom={8}
+          style={{ height: "100%", width: "100%" }}
+        >
           <SearchControl />
           <MapTypeControl mapType={mapType} setMapType={setMapType} />
           <TileLayer
-            url={mapType === "street"
-              ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"}
+            url={
+              mapType === "street"
+                ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            }
             attribution={mapType === "street" ? "" : "Tiles © Esri"}
           />
           <MapClickHandler onMapClick={handleMapClick} isDrawing={isDrawing} />
@@ -218,28 +259,45 @@ export default function MapView({ cropType }: { cropType: string }) {
               key={idx}
               center={point}
               radius={5}
-              pathOptions={{ color: "#fff", fillColor: isDrawing ? "#ff5722" : "#4caf50", fillOpacity: 1 }}
+              pathOptions={{
+                color: "#fff",
+                fillColor: isDrawing ? "#ff5722" : "#4caf50",
+                fillOpacity: 1,
+              }}
             />
           ))}
 
           {farmPolygon.length >= 2 && (
             <Polyline
               positions={farmPolygon}
-              pathOptions={{ color: isDrawing ? "#ff5722" : "#4caf50", weight: 3, dashArray: isDrawing ? "6,6" : undefined }}
+              pathOptions={{
+                color: isDrawing ? "#ff5722" : "#4caf50",
+                weight: 3,
+                dashArray: isDrawing ? "6,6" : undefined,
+              }}
             />
           )}
 
           {!isDrawing && farmPolygon.length >= 3 && (
-            <Polygon positions={farmPolygon} pathOptions={{ color: "#4caf50", fillColor: "#4caf50" }} />
+            <Polygon
+              positions={farmPolygon}
+              pathOptions={{ color: "#4caf50", fillColor: "#4caf50" }}
+            />
           )}
         </MapContainer>
       </div>
 
-      <div className="area-display">{farmArea > 0 ? `Area: ${farmArea} hectares` : "No farm selected"}</div>
+      <div className="area-display">
+        {farmArea > 0 ? `Area: ${farmArea} hectares` : "No farm selected"}
+      </div>
 
       {farmPolygon.length >= 3 && !isDrawing && (
         <div className="submit-section">
-          <button className="btn btn-green-600" onClick={handleSubmit} disabled={loading}>
+          <button
+            className="btn btn-green-600"
+            onClick={handleSubmit}
+            disabled={loading}
+          >
             {loading ? "Submitting..." : "Submit"}
           </button>
           {submitted && <p className="text-green-700 mt-2">✅ Submitted!</p>}

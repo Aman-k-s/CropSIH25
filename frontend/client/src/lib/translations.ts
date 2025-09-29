@@ -45,6 +45,11 @@ export const translations = {
     field_mapping: "Enter your Field polygon on the map",
     draw: "Draw",
     clear: "Clear",
+soil_type: "Soil Type",
+soil_placeholder: "Select your soil",
+irrigation_type: "Irrigation Type",
+irrigation_placeholder: "Select your irrigation",
+
 
     // Data Analytics
     indices_report: "Indices report AWD conditions",
@@ -120,6 +125,12 @@ export const translations = {
     field_mapping: "मैप पर अपना खेत बहुभुज दर्ज करें",
     draw: "बनाएं",
     clear: "साफ़ करें",
+    // My Field (additional keys)
+soil_type: "मिट्टी का प्रकार",
+soil_placeholder: "अपनी मिट्टी चुनें",
+irrigation_type: "सिंचाई प्रकार",
+irrigation_placeholder: "अपनी सिंचाई चुनें",
+
 
     // Data Analytics
     indices_report: "सूचकांक रिपोर्ट AWD स्थितियां",
@@ -195,6 +206,12 @@ export const translations = {
     field_mapping: "ਨਕਸ਼ੇ 'ਤੇ ਆਪਣੇ ਖੇਤ ਦਾ ਬਹੁਭੁਜ ਦਰਜ ਕਰੋ",
     draw: "ਬਣਾਓ",
     clear: "ਸਾਫ਼ ਕਰੋ",
+    // My Field (additional keys)
+soil_type: "ਮਿੱਟੀ ਦਾ ਪ੍ਰਕਾਰ",
+soil_placeholder: "ਆਪਣੀ ਮਿੱਟੀ ਚੁਣੋ",
+irrigation_type: "ਸਿੰਚਾਈ ਦਾ ਪ੍ਰਕਾਰ",
+irrigation_placeholder: "ਆਪਣੀ ਸਿੰਚਾਈ ਚੁਣੋ",
+
 
     // Data Analytics
     indices_report: "ਸੂਚਕਾਂਕ ਰਿਪੋਰਟ AWD ਸਥਿਤੀਆਂ",
@@ -261,6 +278,8 @@ export const translations = {
 
     // My Field
     crop_type: "വിളയുടെ തരം",
+    soil_type: "മണ്ണിന്റെ തരം",
+  irrigation_type: "ജലസേചന രീതികൾ",
     select_crop: "നിങ്ങളുടെ വിള തിരഞ്ഞെടുക്കുക",
     field_info: "ഫീൽഡ് വിവരങ്ങൾ",
     field_name: "ഫീൽഡ് പേര്",
@@ -271,6 +290,10 @@ export const translations = {
     field_mapping: "മാപ്പിൽ നിങ്ങളുടെ ഫീൽഡ് പോളിഗൺ നൽകുക",
     draw: "വരയ്ക്കുക",
     clear: "ക്ലിയർ",
+  soil_placeholder: "നിങ്ങളുടെ മണ്ണ് തിരഞ്ഞെടുക്കുക",
+  irrigation_placeholder: "നിങ്ങളുടെ ജലസേചനം തിരഞ്ഞെടുക്കുക",
+  
+
 
     // Data Analytics
     indices_report: "സൂചിക റിപ്പോർട്ട് AWD സാഹചര്യങ്ങൾ",
