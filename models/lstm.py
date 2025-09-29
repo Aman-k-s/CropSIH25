@@ -67,4 +67,3 @@ def predict_risk_from_values(sequence, device=DEVICE):
         "risk_level": "High" if prob > 0.5 else "Low"
     }
 
-# result = predict_risk_from_values(# JSON wala data)
