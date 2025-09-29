@@ -29,10 +29,39 @@ const API_TOKEN = process.env.AUTH_TOKEN;
 export function FieldReport() {
   const { t } = useTranslation();
 
-
   const [weather, setWeather] = useState<any>(null);
   const [forecast, setForecast] = useState<any[]>([]);
   const [cropHealth, setCropHealth] = useState<string | string[] | null>(null);
+
+  const [soilInputs, setSoilInputs] = useState({
+  N: "",
+  P: "",
+  K: "",
+  pH: "",
+});
+const [soilSubmitted, setSoilSubmitted] = useState(false);
+const handleSoilChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setSoilInputs({ ...soilInputs, [e.target.name]: e.target.value });
+};
+
+const handleSoilSubmit = () => {
+  setSoilSubmitted(true);
+};
+
+// Placeholder advice logic
+const getSoilAdvice = () => {
+  const adviceList: string[] = [];
+  if (+soilInputs.pH < 6) adviceList.push("Soil is acidic. Consider liming.");
+  else if (+soilInputs.pH > 7.5) adviceList.push("Soil is alkaline. Consider organic matter.");
+
+  if (+soilInputs.N < 100) adviceList.push("Nitrogen is low. Add N fertilizer.");
+  if (+soilInputs.P < 50) adviceList.push("Phosphorus is low. Add P fertilizer.");
+  if (+soilInputs.K < 50) adviceList.push("Potassium is low. Add K fertilizer.");
+
+  if (adviceList.length === 0) adviceList.push("Soil nutrients are adequate.");
+  return adviceList;
+};
+
 
   // Fetch coordinates + weather
   useEffect(() => {
@@ -125,7 +154,6 @@ export function FieldReport() {
     fetchWeather();
   }, []);
 
-
   //Crop Health
   useEffect(() => {
     const fetchCropHealth = async () => {
@@ -150,7 +178,6 @@ export function FieldReport() {
 
     fetchCropHealth();
   }, []);
-  
 
   const handlePDFDownload = () => {
     alert("Feature soon to be implemented. PDF Generation");
@@ -173,42 +200,61 @@ export function FieldReport() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* AI Analysis (Full width) */}
+        {/* Top: AI Crop Analysis full width */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Bot className="mr-2 h-5 w-5 text-primary" />
-              {t("ai_analysis")}
+              AI Crop Analysis
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  {t("analysis_result")}
-                </p>
-              </div>
-              <div className="flex space-x-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">85%</div>
-                  <div className="text-xs text-muted-foreground">
-                    {t("health_score")}
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Sidebar: 30% */}
+              <div className="lg:w-1/3 bg-muted/50 p-4 rounded-lg space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="text-center p-2 bg-white rounded shadow">
+                    <div className="text-3xl font-bold text-primary">85%</div>
+                    <div className="text-sm text-muted-foreground">
+                      Health Score
+                    </div>
+                  </div>
+                  <div className="text-center p-2 bg-white rounded shadow">
+                    <div className="text-2xl font-bold text-secondary">1.2</div>
+                    <div className="text-sm text-muted-foreground">Stress</div>
                   </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-accent">0.7</div>
-                  <div className="text-xs text-muted-foreground">NDVI</div>
-                </div>
+              </div>
+
+              {/* Main Content: 70% */}
+              <div className="lg:w-2/3 bg-muted/50 p-4 rounded-lg space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Satellite imagery indicates healthy vegetation across the
+                  majority of the field. Minor dry patches observed in the
+                  northeast section. Pest activity detected in low intensity
+                  areas.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Soil moisture levels are adequate with slight variability.
+                  Fertilizer application is recommended in low nutrient zones.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Overall crop health is stable. No immediate intervention
+                  required except monitoring water and pest levels.
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Left column: EE + Weather */}
-        <div className="space-y-4">
-          <EEData />
+        {/* Left Column: Field Summary (EEData) full height */}
+        <div className="flex flex-col space-y-4 h-[calc(100vh-96px)]">
+          <EEData className="flex-1" />
+        </div>
 
-          {/* Weather Card */}
+        {/* Right Column */}
+        <div className="flex flex-col space-y-4">
+          {/* Weather Card on top */}
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center mb-3">
@@ -259,80 +305,88 @@ export function FieldReport() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Soil Health / Fertilizer below Weather */}
+          <Card>
+  <CardHeader>
+    <CardTitle className="flex items-center text-lg font-semibold">
+      <Beaker className="mr-2 h-5 w-5" />
+      Soil Health & Fertilizer Input
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    {!soilSubmitted ? (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          {["N", "P", "K", "pH"].map((key) => (
+            <div key={key} className="flex flex-col">
+              <label className="text-sm font-medium text-muted-foreground">
+                {key} Value
+              </label>
+              <input
+                type="number"
+                name={key}
+                value={(soilInputs as any)[key]}
+                onChange={handleSoilChange}
+                className="border rounded px-2 py-1"
+                placeholder={`Enter ${key}`}
+                step={key === "pH" ? "0.1" : "1"}
+              />
+            </div>
+          ))}
+        </div>
+        <Button
+          onClick={handleSoilSubmit}
+          className="bg-primary text-white hover:bg-primary/90"
+        >
+          Submit
+        </Button>
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {/* Display all 4 values in a single row */}
+        <div className="flex justify-between gap-4 text-center">
+          <div className="flex-1 p-3 bg-primary/10 rounded-lg">
+            <div className="text-lg font-bold text-primary">{soilInputs.pH}</div>
+            <div className="text-xs text-muted-foreground">pH</div>
+          </div>
+          <div className="flex-1 p-3 bg-secondary/10 rounded-lg">
+            <div className="text-lg font-bold text-secondary">{soilInputs.N}</div>
+            <div className="text-xs text-muted-foreground">N (kg/ha)</div>
+          </div>
+          <div className="flex-1 p-3 bg-accent/10 rounded-lg">
+            <div className="text-lg font-bold text-accent">{soilInputs.P}</div>
+            <div className="text-xs text-muted-foreground">P (kg/ha)</div>
+          </div>
+          <div className="flex-1 p-3 bg-amber-10 rounded-lg">
+            <div className="text-lg font-bold text-amber-700">{soilInputs.K}</div>
+            <div className="text-xs text-muted-foreground">K (kg/ha)</div>
+          </div>
         </div>
 
+        {/* Advice Section */}
+        <div className="p-4 bg-yellow-50 rounded-lg">
+          <h4 className="text-sm font-semibold mb-2">Advice:</h4>
+          <ul className="list-disc pl-5 text-sm text-muted-foreground">
+            {getSoilAdvice().map((a, idx) => (
+              <li key={idx}>{a}</li>
+            ))}
+          </ul>
+        </div>
 
-        {/* Left column: Soil Health */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Beaker className="mr-2 h-5 w-5" />
-              {t("soil_health")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <div className="text-lg font-bold text-primary">6.5</div>
-                  <div className="text-xs text-muted-foreground">pH</div>
-                </div>
-                <div className="p-3 bg-secondary/10 rounded-lg">
-                  <div className="text-lg font-bold text-secondary">120</div>
-                  <div className="text-xs text-muted-foreground">N (kg/ha)</div>
-                </div>
-                <div className="p-3 bg-accent/10 rounded-lg">
-                  <div className="text-lg font-bold text-accent">45</div>
-                  <div className="text-xs text-muted-foreground">P (kg/ha)</div>
-                </div>
-              </div>
-              <div className="p-4 bg-primary/10 rounded-lg">
-                <p className="text-sm text-primary font-medium">
-                  {t("fertilizer_recommendation")}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <Button
+          onClick={() => setSoilSubmitted(false)}
+          className="bg-gray-200 hover:bg-gray-300"
+        >
+          Edit
+        </Button>
+      </div>
+    )}
+  </CardContent>
+</Card>
 
 
-        {/* Full width: Crop Health */}
-        <Card className="lg:col-span-2">
-          <CardContent className="p-4">
-            <div className="flex items-center mb-3">
-              <Beaker className="mr-2 h-4 w-4 text-card-foreground" />
-              <h4 className="font-medium text-card-foreground">
-                {t("Crop Health")}
-              </h4>
-            </div>
-            <div className="bg-accent/10 rounded-lg p-4 space-y-3">
-              {cropHealth ? (
-                <>
-                  <div className="flex flex-col space-y-2">
-                    {Array.isArray(cropHealth) ? (
-                      cropHealth.map((item: any, idx: number) => (
-                        <div
-                          key={idx}
-                          className="border-b border-accent/20 pb-2"
-                        >
-                          <p className="text-sm text-muted-foreground">
-                            {item}
-                          </p>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        {cropHealth}
-                      </p>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">loading...</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );
