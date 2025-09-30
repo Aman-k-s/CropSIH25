@@ -5,11 +5,38 @@ import { TrendingUp, Trees, Leaf, DollarSign, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 
 
+
+
 export function DataAnalytics() {
   const { t } = useTranslation();
 
   const [location, setLocation] = useState("Thiruvananthapuram, Kerala");
   const [mapQuery, setMapQuery] = useState(location);
+  const [ccData, setCcData] = useState<any>(null);
+const [ccLoading, setCcLoading] = useState(true);
+const [ccError, setCcError] = useState<any>(null);
+
+useEffect(() => {
+  fetch("http://localhost:8000/field/cc", {
+    headers: {
+      Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
+    },
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Network response was not ok");
+      return res.json();
+    })
+    .then((json) => {
+      setCcData(json);
+      setCcLoading(false);
+    })
+    .catch((err) => {
+      console.error("Carbon Credits fetch error:", err);
+      setCcError(err);
+      setCcLoading(false);
+    });
+}, []);
+
 
   const handleSearch = () => {
     setMapQuery(location);
@@ -170,7 +197,8 @@ export function DataAnalytics() {
                       className="text-3xl font-bold text-primary"
                       data-testid="text-carbon-credits"
                     >
-                      2.4
+                      {ccLoading ? "…" : ccError ? "Err" : ccData?.carbon_credits?.toFixed(2)}
+
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {t("credits_earned")}
@@ -178,17 +206,22 @@ export function DataAnalytics() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>{t("methane_reduction")}</span>
-                      <span className="font-medium">1.8 tCO₂e</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>{t("water_saving")}</span>
-                      <span className="font-medium">0.6 tCO₂e</span>
-                    </div>
+  <span>{t("methane_reduction")}</span>
+  <span className="font-medium">
+    {ccLoading ? "…" : ccError ? "Err" : `${(ccData?.methane_reduction_kg / 1000).toFixed(1)} tCO₂e`}
+  </span>
+</div>
+<div className="flex justify-between text-sm">
+  <span>{t("water_saving")}</span>
+  <span className="font-medium">
+    {ccLoading ? "…" : ccError ? "Err" : `${ccData?.water_saved_cubic_m?.toFixed(1)} m³`}
+  </span>
+</div>
+
                   </div>
                   <div className="p-3 bg-accent/10 rounded-lg text-center">
                     <p className="text-sm text-accent font-medium">
-                      {t("estimated_value")}
+                      {ccLoading ? "…" : ccError ? "Error" : `₹${ccData?.estimated_value_inr?.toLocaleString()}`}
                     </p>
                   </div>
                 </div>
