@@ -185,67 +185,76 @@ export function DataAnalytics() {
           {/* Carbon Credit + Tree Count Row */}
           <div className="grid grid-cols-2 gap-6">
             {/* Carbon Credits Estimation */}
-            <CardContent>
-              {ccLoading ? (
-                <p className="text-sm text-muted-foreground text-center">
-                  Fetching Carbon Data...
-                </p>
-              ) : ccError ? (
-                <p className="text-sm text-red-600 text-center">
-                  Error loading data
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {/* Carbon Credits main number */}
-                  <div className="text-center">
-                    <div
-                      className="text-3xl font-bold text-primary"
-                      data-testid="text-carbon-credits"
-                    >
-                      {ccData?.carbon_credits?.toFixed(2)}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Leaf className="mr-2 h-5 w-5 text-primary"/>
+                  {t("carbon_credits")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {ccLoading ? (
+                  <p className="text-sm text-muted-foreground text-center">
+                    Fetching Carbon Data...
+                  </p>
+                ) : ccError ? (
+                  <p className="text-sm text-red-600 text-center">
+                    Error loading data
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Carbon Credits main number */}
+                    <div className="text-center">
+                      <div
+                        className="text-3xl font-bold text-primary"
+                        data-testid="text-carbon-credits"
+                      >
+                        {ccData?.carbon_credits?.toFixed(2)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {t("credits_earned")}
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {t("credits_earned")}
-                    </div>
-                  </div>
 
-                  {/* Metrics List */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>{t("area_hectare")}</span>
-                      <span className="font-medium">
-                        {ccData?.area_hectare?.toFixed(2)} ha
-                      </span>
+                    {/* Metrics List */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>{t("area_hectare")}</span>
+                        <span className="font-medium">
+                          {ccData?.area_hectare?.toFixed(2)} ha
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>{t("methane_reduction")}</span>
+                        <span className="font-medium">
+                          {(ccData?.methane_reduction_kg / 1000).toFixed(1)}{" "}
+                          tCO₂e
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>{t("water_saving")}</span>
+                        <span className="font-medium">
+                          {ccData?.water_saved_cubic_m?.toFixed(1)} m³
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>{t("co2e_reduction")}</span>
+                        <span className="font-medium">
+                          {ccData?.co2e_reduction_ton?.toFixed(2)} tCO₂e
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span>{t("methane_reduction")}</span>
-                      <span className="font-medium">
-                        {(ccData?.methane_reduction_kg / 1000).toFixed(1)} tCO₂e
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>{t("water_saving")}</span>
-                      <span className="font-medium">
-                        {ccData?.water_saved_cubic_m?.toFixed(1)} m³
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>{t("co2e_reduction")}</span>
-                      <span className="font-medium">
-                        {ccData?.co2e_reduction_ton?.toFixed(2)} tCO₂e
-                      </span>
-                    </div>
-                  </div>
 
-                  {/* Estimated Value */}
-                  <div className="p-3 bg-accent/10 rounded-lg text-center">
-                    <p className="text-sm text-accent font-medium">
-                      ₹{ccData?.estimated_value_inr?.toLocaleString()}
-                    </p>
+                    {/* Estimated Value */}
+                    <div className="p-3 bg-accent/10 rounded-lg text-center">
+                      <p className="text-sm text-accent font-medium">
+                        ₹{ccData?.estimated_value_inr?.toLocaleString()}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
-            </CardContent>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Tree Count Card */}
             <Card>
