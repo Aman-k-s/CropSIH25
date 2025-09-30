@@ -3,24 +3,30 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useTranslation } from "@/hooks/useTranslation";
 import { Bug, Camera, AlertTriangle, Activity, ShieldAlert } from "lucide-react";
 
 export function Pest() {
-  const { t } = useTranslation();
+  // Mock translation function to resolve the import error
+  const t = (key: string) => ({
+    "Agro_Alerts": "Agro Alerts",
+    "pest_detection": "Pest Detection",
+    "select_photos": "Select Photos",
+    "scan": "Scan",
+    "Pest Prediction": "Pest Prediction",
+  }[key] || key);
 
   // States
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
+  const [detectionResult, setDetectionResult] = useState<any | null>(null); // State to hold the API JSON response
   const [pestPrediction, setPestPrediction] = useState<any[]>([]);
 
   // Pest Prediction
   useEffect(() => {
     const fetchPestPrediction = async () => {
       try {
-        const pestRes = await fetch("http://localhost:8000/field/pest-predict", {
+        const pestRes = await fetch("http://localhost:8000/field/pestpredict", {
           headers: {
             Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
           },
@@ -44,28 +50,36 @@ export function Pest() {
     const filesArray = Array.from(e.target.files);
     setSelectedFiles(filesArray);
     setPreviews(filesArray.map((file) => URL.createObjectURL(file)));
-    setResult(t("pest_detected"));
+    setDetectionResult(null); // Clear previous results on new file selection
   };
 
   // File upload
   const handleUpload = async () => {
-    if (selectedFiles.length === 0) return alert("Please select at least one file!");
+    if (selectedFiles.length === 0) {
+      alert("Please select at least one file!");
+      return;
+    }
     setUploading(true);
+    setDetectionResult(null); // Clear previous results before a new upload
 
     const formData = new FormData();
-    selectedFiles.forEach((file) => formData.append("images", file));
+    selectedFiles.forEach((file) => formData.append("image", file));
 
     try {
-      const response = await fetch("http://localhost:5000/api/pest-detection", {
+      const response = await fetch("http://localhost:8000/pest", {
         method: "POST",
+        headers: {
+          'Authorization': `Token d5168cd4b604859db241e89734016b806393e69f`,
+        },
         body: formData,
       });
 
       if (!response.ok) throw new Error("Upload failed");
       const data = await response.json();
-      setResult(data.message || t("pest_detected"));
+      setDetectionResult(data); // Store the full JSON response
     } catch (error: any) {
-      alert(error.message || "Something went wrong");
+      // Store error object to display it in the UI
+      setDetectionResult({ error: error.message || "Something went wrong" });
     } finally {
       setUploading(false);
     }
@@ -85,7 +99,7 @@ export function Pest() {
         <CardHeader>
           <CardTitle className="flex items-center">
             <AlertTriangle className="mr-2 h-5 w-5 text-red-600" />
-            {t("Agro Alerts")}
+            {t("Agro_Alerts")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -129,7 +143,31 @@ export function Pest() {
                 <Camera className="mr-2 h-4 w-4" />
                 {uploading ? "Uploading..." : t("scan")}
               </Button>
-              {result && <p className="text-sm text-muted-foreground mt-2">{result}</p>}
+              
+              {/* Display API result in a presentable format */}
+              {detectionResult && (
+                <div className="mt-4 w-full text-left bg-gray-100 p-3 rounded-md border border-gray-300">
+                  <h4 className="font-semibold text-gray-800 text-md mb-2">Detection Result:</h4>
+                  {detectionResult.error ? (
+                    <p className="text-sm text-red-600 font-medium">{detectionResult.error}</p>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-sm">
+                        <span className="font-medium text-gray-600">Status: </span>
+                        <span className={`font-bold ${detectionResult.class === 'Healthy' ? 'text-green-600' : 'text-red-600'}`}>
+                          {detectionResult.class}
+                        </span>
+                      </p>
+                      {/* <p className="text-sm">
+                        <span className="font-medium text-gray-600">Confidence: </span>
+                        <span className="font-semibold text-gray-800">
+                          {`${(detectionResult.probability * 100).toFixed(2)}%`}
+                        </span>
+                      </p> */}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -163,3 +201,4 @@ export function Pest() {
     </div>
   );
 }
+

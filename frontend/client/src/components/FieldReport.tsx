@@ -146,7 +146,7 @@ useEffect(() => {
   useEffect(() => {
     const fetchCropHealth = async () => {
       try {
-        const res = await fetch("http://localhost:8000/field/crop-health", {
+        const res = await fetch("http://localhost:8000/field/healthscore", {
           headers: {
             Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
           },
@@ -202,7 +202,7 @@ useEffect(() => {
               <div className="lg:w-1/3 bg-muted/50 p-4 rounded-lg space-y-4">
                 <div className="grid grid-cols-1 gap-4">
                   <div className="text-center p-2 bg-white rounded shadow">
-                    <div className="text-3xl font-bold text-primary">85%</div>
+                    <div className="text-3xl font-bold text-primary">{cropHealth}</div>
                     <div className="text-sm text-muted-foreground">
                       Health Score
                     </div>
