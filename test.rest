@@ -21,7 +21,7 @@ Authorization: Token d5168cd4b604859db241e89734016b806393e69f
 
 ### SET POLYGON
 
-POST http://127.0.0.1:8000/field/set_field
+POST http://127.0.0.1:8000/field/set_polygon
 Content-Type: application/json
 Authorization: Token d5168cd4b604859db241e89734016b806393e69f
 

@@ -180,7 +180,7 @@ const getSoilAdvice = () => {
   }, []);
 
   const handlePDFDownload = () => {
-    alert("Feature soon to be implemented. PDF Generation");
+    window.print();
   };
 
   return (
@@ -249,7 +249,7 @@ const getSoilAdvice = () => {
 
         {/* Left Column: Field Summary (EEData) full height */}
         <div className="flex flex-col space-y-4 h-[calc(100vh-96px)]">
-          <EEData className="flex-1" />
+          <EEData/>
         </div>
 
         {/* Right Column */}
