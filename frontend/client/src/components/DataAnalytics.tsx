@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 
 
 export function DataAnalytics() {
+  const MAP_KEY = ""
   const { t } = useTranslation();
 
   const [location, setLocation] = useState("Thiruvananthapuram, Kerala");
@@ -320,7 +321,7 @@ useEffect(() => {
               <div className="w-full h-48 rounded-lg overflow-hidden shadow-sm">
                 <iframe
                   title="Market Map"
-                  src={`https://www.google.com/maps/embed/v1/place?key=${process.env.MAP_API_KEY}&q=${encodeURIComponent(
+                  src={`https://www.google.com/maps/embed/v1/place?key=${MAP_KEY}&q=${encodeURIComponent(
                     mapQuery
                   )}`}
                   width="100%"
