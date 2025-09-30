@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from .models import FieldData, Pest
 from .serializers import (
-    FieldDataResponseSerializer, PestResultSerializer
+    FieldDataResponseSerializer
 )
 from .utils import fetchEEData, calculate_area_in_hectares
 from django.shortcuts import get_object_or_404
@@ -101,9 +101,8 @@ class PestReport(APIView):
         
         # cnn.py
         result = predict_health(uploaded.image.path)
-        serializer = PestResultSerializer({"result":result})
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(result, status=status.HTTP_201_CREATED)
     
 
 class AWDreport(APIView):

@@ -18,6 +18,3 @@ class FieldDataResponseSerializer(serializers.Serializer):
         allow_empty=True,
         required=False
     )
-
-class PestResultSerializer(serializers.Serializer):
-    result = serializers.CharField()
