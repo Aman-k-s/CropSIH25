@@ -22,7 +22,7 @@ def calculate_carbon_metrics(area_hectare: float,
     if ndwi_based_awd:
         methane_reduction_kg = methane_baseline - awd_reduction_factor
     else:
-        methane_reduction_kg = methane_baseline
+        methane_reduction_kg = 0
 
     # 3. CO2e reduction
     co2e_reduction_kg = methane_reduction_kg * ch4_to_co2e
