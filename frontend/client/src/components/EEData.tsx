@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Satellite } from "lucide-react"; // keeping this for the title icon
+import { Satellite, Loader2 } from "lucide-react"; // 🔹 added Loader2
 import {
   ActivityLogIcon,
   BarChartIcon,
@@ -61,7 +61,7 @@ export function EEData() {
     fetchFieldData();
   }, []);
 
-  // Strongly typed chart data
+  // Chart data
   const chartData: ChartData<"line"> = {
     labels: data?.ndvi_time_series?.map((d: any) => d.date) || [],
     datasets: [
@@ -76,7 +76,6 @@ export function EEData() {
     ],
   };
 
-  // Strongly typed chart options
   const chartOptions: ChartOptions<"line"> = {
     responsive: true,
     plugins: {
@@ -99,7 +98,12 @@ export function EEData() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <p className="text-sm text-green-500">Fetching field data...</p>
+          <div className="flex justify-center items-center h-32">
+            <Loader2 className="h-6 w-6 animate-spin text-green-600" />
+            <span className="ml-2 text-sm text-green-600">
+              Fetching satellite data...
+            </span>
+          </div>
         ) : data ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* Stats */}
@@ -111,29 +115,30 @@ export function EEData() {
                 </div>
               )}
               {data.EVI != null && (
-              <div className="flex items-center gap-2">
-                <BarChartIcon /> <span className="font-bold">EVI:</span>{" "}
-                {data.EVI.toFixed(3)}
-              </div>
+                <div className="flex items-center gap-2">
+                  <BarChartIcon /> <span className="font-bold">EVI:</span>{" "}
+                  {data.EVI.toFixed(3)}
+                </div>
               )}
               {data.rainfall_mm != null && (
-              <div className="flex items-center gap-2">
-                <MixerHorizontalIcon />{" "}
-                <span className="font-bold">Rainfall:</span>{" "}
-                {data.rainfall_mm.toFixed(2)} mm
-              </div>
+                <div className="flex items-center gap-2">
+                  <MixerHorizontalIcon />{" "}
+                  <span className="font-bold">Rainfall:</span>{" "}
+                  {data.rainfall_mm.toFixed(2)} mm
+                </div>
               )}
               {data.temperature_K != null && (
-              <div className="flex items-center gap-2">
-                <SunIcon /> <span className="font-bold">Temperature:</span>{" "}
-                {(data.temperature_K - 273.15).toFixed(1)} °C
-              </div>
+                <div className="flex items-center gap-2">
+                  <SunIcon /> <span className="font-bold">Temperature:</span>{" "}
+                  {(data.temperature_K - 273.15).toFixed(1)} °C
+                </div>
               )}
               {data.soil_moisture != null && (
-              <div className="flex items-center gap-2">
-                <Half2Icon /> <span className="font-bold">Soil Moisture:</span>{" "}
-                {data.soil_moisture.toFixed(3)}
-              </div>
+                <div className="flex items-center gap-2">
+                  <Half2Icon />{" "}
+                  <span className="font-bold">Soil Moisture:</span>{" "}
+                  {data.soil_moisture.toFixed(3)}
+                </div>
               )}
             </div>
 

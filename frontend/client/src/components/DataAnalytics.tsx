@@ -1,12 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
-import { TrendingUp, Trees, Leaf, DollarSign, MapPin } from "lucide-react";
+import { TrendingUp, Trees, Leaf, DollarSign, MapPin, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 
 export function DataAnalytics() {
-  const MAP_KEY = "";
   const { t } = useTranslation();
 
   const [location, setLocation] = useState("Thiruvananthapuram, Kerala");
@@ -41,7 +40,7 @@ export function DataAnalytics() {
   };
 
   function IndicesReport() {
-    const [data, setData] = useState<any>(null); // backend data
+    const [data, setData] = useState<any>(null);
     const [error, setError] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -75,10 +74,11 @@ export function DataAnalytics() {
               {t("indices_report")}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
+          <CardContent className="flex justify-center items-center h-40">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="ml-2 text-sm text-muted-foreground">
               Fetching AWD data...
-            </p>
+            </span>
           </CardContent>
         </Card>
       );
@@ -140,7 +140,6 @@ export function DataAnalytics() {
 
             {/* AWD Data Section - KPI style */}
             <div className="grid grid-cols-3 gap-4 text-center">
-              {/* AWD Detected */}
               <div className="p-4 bg-green-50 rounded-lg flex flex-col items-center justify-center shadow-sm hover:shadow-md transition">
                 <p className="text-sm text-muted-foreground">AWD Status</p>
                 <p className="text-xl font-bold text-green-700">
@@ -148,7 +147,6 @@ export function DataAnalytics() {
                 </p>
               </div>
 
-              {/* Cycle Count */}
               <div className="p-4 bg-blue-50 rounded-lg flex flex-col items-center justify-center shadow-sm hover:shadow-md transition">
                 <p className="text-sm text-muted-foreground">Cycle Count</p>
                 <p className="text-xl font-bold text-blue-700">
@@ -156,7 +154,6 @@ export function DataAnalytics() {
                 </p>
               </div>
 
-              {/* Dry Days Detected */}
               <div className="p-4 bg-yellow-50 rounded-lg flex flex-col items-center justify-center shadow-sm hover:shadow-md transition">
                 <p className="text-sm text-muted-foreground">Dry Days</p>
                 <p className="text-xl font-bold text-yellow-700">
@@ -188,22 +185,24 @@ export function DataAnalytics() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Leaf className="mr-2 h-5 w-5 text-primary"/>
+                  <Leaf className="mr-2 h-5 w-5 text-primary" />
                   {t("carbon_credits")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {ccLoading ? (
-                  <p className="text-sm text-muted-foreground text-center">
-                    Fetching Carbon Data...
-                  </p>
+                  <div className="flex justify-center items-center h-32">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      Fetching Carbon Data...
+                    </span>
+                  </div>
                 ) : ccError ? (
                   <p className="text-sm text-red-600 text-center">
                     Error loading data
                   </p>
                 ) : (
                   <div className="space-y-4">
-                    {/* Carbon Credits main number */}
                     <div className="text-center">
                       <div
                         className="text-3xl font-bold text-primary"
@@ -216,7 +215,6 @@ export function DataAnalytics() {
                       </div>
                     </div>
 
-                    {/* Metrics List */}
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>{t("area_hectare")}</span>
@@ -245,7 +243,6 @@ export function DataAnalytics() {
                       </div>
                     </div>
 
-                    {/* Estimated Value */}
                     <div className="p-3 bg-accent/10 rounded-lg text-center">
                       <p className="text-sm text-accent font-medium">
                         ₹{ccData?.estimated_value_inr?.toLocaleString()}
@@ -291,7 +288,6 @@ export function DataAnalytics() {
 
         {/* Right Column */}
         <div className="space-y-6">
-          {/* Market Price Widget */}
           <Card className="h-full">
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -300,11 +296,10 @@ export function DataAnalytics() {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col justify-between h-full space-y-4">
-              {/* Market Price Info */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg">
                   <div>
-                    <p className="font-medium text-secondary">Wheat</p>
+                    <p className="font-medium text-secondary">Rice</p>
                     <p className="text-sm text-muted-foreground">Per quintal</p>
                   </div>
                   <div className="text-right">
@@ -312,7 +307,7 @@ export function DataAnalytics() {
                       className="text-lg font-bold text-secondary"
                       data-testid="text-wheat-price"
                     >
-                      ₹1,850
+                      ₹2,700
                     </p>
                     <p className="text-xs text-green-600">+2.5% ↗</p>
                   </div>
@@ -327,7 +322,6 @@ export function DataAnalytics() {
                 </div>
               </div>
 
-              {/* Google Maps Search */}
               <div className="flex space-x-2">
                 <input
                   type="text"
@@ -344,11 +338,9 @@ export function DataAnalytics() {
                 </button>
               </div>
 
-              {/* Embedded Google Map */}
-              {/* Embedded Leaflet Map */}
               <div className="w-full h-48 rounded-lg overflow-hidden shadow-sm">
                 <MapContainer
-                  center={[8.5241, 76.9366]} // Thiruvananthapuram, Kerala
+                  center={[8.5241, 76.9366]}
                   zoom={12}
                   scrollWheelZoom={false}
                   className="h-full w-full"
@@ -363,7 +355,6 @@ export function DataAnalytics() {
                 </MapContainer>
               </div>
 
-              {/* Directions Button */}
               <Button
                 className="w-full bg-primary hover:bg-primary/90 mt-auto"
                 data-testid="button-view-directions"
