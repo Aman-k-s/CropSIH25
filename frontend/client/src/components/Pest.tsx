@@ -20,29 +20,33 @@ export function Pest() {
   const [previews, setPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [detectionResult, setDetectionResult] = useState<any | null>(null); // State to hold the API JSON response
-  const [pestPrediction, setPestPrediction] = useState<any[]>([]);
+  const [pestPrediction, setPestPrediction] = useState<null | {
+  risk_probability: number;
+  risk_level: string;
+}>(null);
 
   // Pest Prediction
   useEffect(() => {
-    const fetchPestPrediction = async () => {
-      try {
-        const pestRes = await fetch("http://localhost:8000/field/pestpredict", {
-          headers: {
-            Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
-          },
-        });
+  const fetchPestPrediction = async () => {
+    try {
+      const pestRes = await fetch("http://127.0.0.1:8000/field/pestpredict", {
+        headers: {
+          Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
+          "Content-Type": "application/json",
+        },
+      });
 
-        if (!pestRes.ok) return console.warn("[Pest] pest prediction failed");
+      if (!pestRes.ok) return console.warn("[Pest] pest prediction failed");
 
-        const pestData = await pestRes.json();
-        setPestPrediction(pestData);
-      } catch (err) {
-        console.error("Pest prediction fetch error:", err);
-      }
-    };
+      const pestData = await pestRes.json();
+      setPestPrediction(pestData);
+    } catch (err) {
+      console.error("Pest prediction fetch error:", err);
+    }
+  };
 
-    fetchPestPrediction();
-  }, []);
+  fetchPestPrediction();
+}, []);
 
   // File selection
   const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,30 +177,56 @@ export function Pest() {
         </Card>
 
         {/* Pest Prediction */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Bug className="mr-2 h-5 w-5 text-blue-700" />
-              {t("Pest Prediction")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-blue-50 rounded-lg p-4 space-y-3">
-              {pestPrediction.length > 0 ? (
-                <div className="flex flex-col space-y-2">
-                  {pestPrediction.map((item, idx) => (
-                    <div key={idx} className="flex justify-between border-b border-blue-200 pb-2">
-                      <span className="font-medium text-blue-700">{item.name}</span>
-                      <span className="text-sm text-muted-foreground">{item.probability}%</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">loading...</p>
-              )}
+        {/* Pest Prediction */}
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center">
+      <Bug className="mr-2 h-5 w-5 text-blue-700" />
+      {t("Pest Prediction")}
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="bg-blue-50 rounded-lg p-4 space-y-3">
+      {pestPrediction ? (
+        <div className="space-y-4">
+          {/* Risk Probability */}
+          <div>
+            <p className="text-sm font-medium text-blue-700 mb-1">Risk Probability</p>
+            <div className="w-full bg-blue-100 rounded-full h-3">
+              <div
+                className="bg-blue-600 h-3 rounded-full transition-all duration-500"
+                style={{ width: `${(pestPrediction.risk_probability * 100).toFixed(2)}%` }}
+              ></div>
             </div>
-          </CardContent>
-        </Card>
+            <p className="text-xs text-gray-600 mt-1">
+              {(pestPrediction.risk_probability * 100).toFixed(2)}%
+            </p>
+          </div>
+
+          {/* Risk Level */}
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-blue-700">Risk Level</span>
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-semibold
+                ${
+                  pestPrediction.risk_level === "Low"
+                    ? "bg-green-100 text-green-700"
+                    : pestPrediction.risk_level === "Medium"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+            >
+              {pestPrediction.risk_level}
+            </span>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      )}
+    </div>
+  </CardContent>
+</Card>
+
       </div>
     </div>
   );
