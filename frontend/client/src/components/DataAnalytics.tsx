@@ -3,41 +3,38 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 import { TrendingUp, Trees, Leaf, DollarSign, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
-
-
-
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 
 export function DataAnalytics() {
-  const MAP_KEY = ""
+  const MAP_KEY = "";
   const { t } = useTranslation();
 
   const [location, setLocation] = useState("Thiruvananthapuram, Kerala");
   const [mapQuery, setMapQuery] = useState(location);
   const [ccData, setCcData] = useState<any>(null);
-const [ccLoading, setCcLoading] = useState(true);
-const [ccError, setCcError] = useState<any>(null);
+  const [ccLoading, setCcLoading] = useState(true);
+  const [ccError, setCcError] = useState<any>(null);
 
-useEffect(() => {
-  fetch("http://localhost:8000/field/cc", {
-    headers: {
-      Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
-    },
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error("Network response was not ok");
-      return res.json();
+  useEffect(() => {
+    fetch("http://localhost:8000/field/cc", {
+      headers: {
+        Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
+      },
     })
-    .then((json) => {
-      setCcData(json);
-      setCcLoading(false);
-    })
-    .catch((err) => {
-      console.error("Carbon Credits fetch error:", err);
-      setCcError(err);
-      setCcLoading(false);
-    });
-}, []);
-
+      .then((res) => {
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res.json();
+      })
+      .then((json) => {
+        setCcData(json);
+        setCcLoading(false);
+      })
+      .catch((err) => {
+        console.error("Carbon Credits fetch error:", err);
+        setCcError(err);
+        setCcLoading(false);
+      });
+  }, []);
 
   const handleSearch = () => {
     setMapQuery(location);
@@ -79,7 +76,9 @@ useEffect(() => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Fetching AWD data...</p>
+            <p className="text-sm text-muted-foreground">
+              Fetching AWD data...
+            </p>
           </CardContent>
         </Card>
       );
@@ -116,7 +115,9 @@ useEffect(() => {
             {/* NDWI Chart Mock */}
             <div className="h-48 ndvi-chart rounded-lg p-4 relative bg-gray-50">
               <div className="absolute top-4 left-4">
-                <h4 className="font-medium text-primary">NDWI Trend Analysis</h4>
+                <h4 className="font-medium text-primary">
+                  NDWI Trend Analysis
+                </h4>
                 <p className="text-sm text-muted-foreground">Last 7 days</p>
               </div>
               <svg
@@ -184,50 +185,67 @@ useEffect(() => {
           {/* Carbon Credit + Tree Count Row */}
           <div className="grid grid-cols-2 gap-6">
             {/* Carbon Credits Estimation */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Leaf className="mr-2 h-5 w-5 text-primary" />
-                  {t("carbon_credits")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            <CardContent>
+              {ccLoading ? (
+                <p className="text-sm text-muted-foreground text-center">
+                  Fetching Carbon Data...
+                </p>
+              ) : ccError ? (
+                <p className="text-sm text-red-600 text-center">
+                  Error loading data
+                </p>
+              ) : (
                 <div className="space-y-4">
+                  {/* Carbon Credits main number */}
                   <div className="text-center">
                     <div
                       className="text-3xl font-bold text-primary"
                       data-testid="text-carbon-credits"
                     >
-                      {ccLoading ? "…" : ccError ? "Err" : ccData?.carbon_credits?.toFixed(2)}
-
+                      {ccData?.carbon_credits?.toFixed(2)}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {t("credits_earned")}
                     </div>
                   </div>
+
+                  {/* Metrics List */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-  <span>{t("methane_reduction")}</span>
-  <span className="font-medium">
-    {ccLoading ? "…" : ccError ? "Err" : `${(ccData?.methane_reduction_kg / 1000).toFixed(1)} tCO₂e`}
-  </span>
-</div>
-<div className="flex justify-between text-sm">
-  <span>{t("water_saving")}</span>
-  <span className="font-medium">
-    {ccLoading ? "…" : ccError ? "Err" : `${ccData?.water_saved_cubic_m?.toFixed(1)} m³`}
-  </span>
-</div>
-
+                      <span>{t("area_hectare")}</span>
+                      <span className="font-medium">
+                        {ccData?.area_hectare?.toFixed(2)} ha
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>{t("methane_reduction")}</span>
+                      <span className="font-medium">
+                        {(ccData?.methane_reduction_kg / 1000).toFixed(1)} tCO₂e
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>{t("water_saving")}</span>
+                      <span className="font-medium">
+                        {ccData?.water_saved_cubic_m?.toFixed(1)} m³
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>{t("co2e_reduction")}</span>
+                      <span className="font-medium">
+                        {ccData?.co2e_reduction_ton?.toFixed(2)} tCO₂e
+                      </span>
+                    </div>
                   </div>
+
+                  {/* Estimated Value */}
                   <div className="p-3 bg-accent/10 rounded-lg text-center">
                     <p className="text-sm text-accent font-medium">
-                      {ccLoading ? "…" : ccError ? "Error" : `₹${ccData?.estimated_value_inr?.toLocaleString()}`}
+                      ₹{ccData?.estimated_value_inr?.toLocaleString()}
                     </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              )}
+            </CardContent>
 
             {/* Tree Count Card */}
             <Card>
@@ -318,19 +336,22 @@ useEffect(() => {
               </div>
 
               {/* Embedded Google Map */}
+              {/* Embedded Leaflet Map */}
               <div className="w-full h-48 rounded-lg overflow-hidden shadow-sm">
-                <iframe
-                  title="Market Map"
-                  src={`https://www.google.com/maps/embed/v1/place?key=${MAP_KEY}&q=${encodeURIComponent(
-                    mapQuery
-                  )}`}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                ></iframe>
+                <MapContainer
+                  center={[8.5241, 76.9366]} // Thiruvananthapuram, Kerala
+                  zoom={12}
+                  scrollWheelZoom={false}
+                  className="h-full w-full"
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <Marker position={[8.5241, 76.9366]}>
+                    <Popup>Thiruvananthapuram, Kerala</Popup>
+                  </Marker>
+                </MapContainer>
               </div>
 
               {/* Directions Button */}
