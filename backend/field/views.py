@@ -129,7 +129,7 @@ class CarbonCredit(APIView):
         area = calculate_area_in_hectares(polygon['coordinates'][0])
 
         # cc.py
-        result = calculate_carbon_metrics(area_hectare=area,ndwi_based_awd=awd)
+        result = calculate_carbon_metrics(area_hectare=area)
         return Response(result)
     
 class PestPrediction(APIView):

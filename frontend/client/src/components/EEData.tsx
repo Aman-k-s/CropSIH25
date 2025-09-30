@@ -25,8 +25,15 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
-
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 export function EEData() {
   const [data, setData] = useState<any>(null);
@@ -37,7 +44,9 @@ export function EEData() {
       setLoading(true);
       try {
         const res = await fetch("http://localhost:8000/field/ee", {
-          headers: { Authorization: `Token d5168cd4b604859db241e89734016b806393e69f` },
+          headers: {
+            Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
+          },
         });
         if (!res.ok) throw new Error("Failed to fetch field data");
         const json = await res.json();
@@ -95,26 +104,37 @@ export function EEData() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* Stats */}
             <div className="space-y-3 text-sm text-green-800 font-medium">
-              <div className="flex items-center gap-2">
-                <ActivityLogIcon /> <span className="font-bold">NDVI:</span>{" "}
-                {data.NDVI.toFixed(3)}
-              </div>
+              {data.NDVI != null && (
+                <div className="flex items-center gap-2">
+                  <ActivityLogIcon /> <span className="font-bold">NDVI:</span>{" "}
+                  {data.NDVI.toFixed(3)}
+                </div>
+              )}
+              {data.EVI != null && (
               <div className="flex items-center gap-2">
                 <BarChartIcon /> <span className="font-bold">EVI:</span>{" "}
                 {data.EVI.toFixed(3)}
               </div>
+              )}
+              {data.rainfall_mm != null && (
               <div className="flex items-center gap-2">
-                <MixerHorizontalIcon /> <span className="font-bold">Rainfall:</span>{" "}
+                <MixerHorizontalIcon />{" "}
+                <span className="font-bold">Rainfall:</span>{" "}
                 {data.rainfall_mm.toFixed(2)} mm
               </div>
+              )}
+              {data.temperature_K != null && (
               <div className="flex items-center gap-2">
                 <SunIcon /> <span className="font-bold">Temperature:</span>{" "}
                 {(data.temperature_K - 273.15).toFixed(1)} °C
               </div>
+              )}
+              {data.soil_moisture != null && (
               <div className="flex items-center gap-2">
                 <Half2Icon /> <span className="font-bold">Soil Moisture:</span>{" "}
                 {data.soil_moisture.toFixed(3)}
               </div>
+              )}
             </div>
 
             {/* NDVI Chart */}
