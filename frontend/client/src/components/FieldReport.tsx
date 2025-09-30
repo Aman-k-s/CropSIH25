@@ -34,125 +34,113 @@ export function FieldReport() {
   const [cropHealth, setCropHealth] = useState<string | string[] | null>(null);
 
   const [soilInputs, setSoilInputs] = useState({
-  N: "",
-  P: "",
-  K: "",
-  pH: "",
-});
-const [soilSubmitted, setSoilSubmitted] = useState(false);
-const handleSoilChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  setSoilInputs({ ...soilInputs, [e.target.name]: e.target.value });
-};
+    N: "",
+    P: "",
+    K: "",
+    pH: "",
+  });
+  const [soilSubmitted, setSoilSubmitted] = useState(false);
+  const handleSoilChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSoilInputs({ ...soilInputs, [e.target.name]: e.target.value });
+  };
 
-const handleSoilSubmit = () => {
-  setSoilSubmitted(true);
-};
+  const handleSoilSubmit = () => {
+    setSoilSubmitted(true);
+  };
 
-// Placeholder advice logic
-const getSoilAdvice = () => {
-  const adviceList: string[] = [];
-  if (+soilInputs.pH < 6) adviceList.push("Soil is acidic. Consider liming.");
-  else if (+soilInputs.pH > 7.5) adviceList.push("Soil is alkaline. Consider organic matter.");
+  // Placeholder advice logic
+  const getSoilAdvice = () => {
+    const adviceList: string[] = [];
+    if (+soilInputs.pH < 6) adviceList.push("Soil is acidic. Consider liming.");
+    else if (+soilInputs.pH > 7.5)
+      adviceList.push("Soil is alkaline. Consider organic matter.");
 
-  if (+soilInputs.N < 100) adviceList.push("Nitrogen is low. Add N fertilizer.");
-  if (+soilInputs.P < 50) adviceList.push("Phosphorus is low. Add P fertilizer.");
-  if (+soilInputs.K < 50) adviceList.push("Potassium is low. Add K fertilizer.");
+    if (+soilInputs.N < 100)
+      adviceList.push("Nitrogen is low. Add N fertilizer.");
+    if (+soilInputs.P < 50)
+      adviceList.push("Phosphorus is low. Add P fertilizer.");
+    if (+soilInputs.K < 50)
+      adviceList.push("Potassium is low. Add K fertilizer.");
 
-  if (adviceList.length === 0) adviceList.push("Soil nutrients are adequate.");
-  return adviceList;
-};
-
+    if (adviceList.length === 0)
+      adviceList.push("Soil nutrients are adequate.");
+    return adviceList;
+  };
 
   // Fetch coordinates + weather
-  useEffect(() => {
-    const fetchWeather = async () => {
-      try {
-        if (!API_TOKEN) {
-          console.warn("[FieldReport] OpenWeather API key missing");
-          return;
-        }
+  // Remove this
+// const API_TOKEN = process.env.AUTH_TOKEN;
 
-        // Get first coord from your backend (example endpoint)
-        const coordRes = await fetch("http://localhost:8000/field/coord", {
-          headers: {
-            Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
-          },
-        });
+useEffect(() => {
+  const fetchWeather = async () => {
+    try {
+      // 🔹 No need to check for API_TOKEN anymore
+      // Get first coord from your backend
+      const coordRes = await fetch("http://localhost:8000/field/coord", {
+        headers: {
+          Authorization: `Token d5168cd4b604859db241e89734016b806393e69f`,
+        },
+      });
 
-        if (!coordRes.ok) {
-          console.warn("[FieldReport] coord endpoint failed:", coordRes.status);
-          return;
-        }
-
-        const coordData = await coordRes.json();
-        // Expect server to return coord as [lon, lat] or { lon, lat } — adapt if needed.
-        const coord = coordData?.coord || coordData?.location || null;
-        let lon: number | undefined;
-        let lat: number | undefined;
-        if (Array.isArray(coord)) {
-          [lon, lat] = coord;
-        } else if (coord && typeof coord === "object") {
-          lon = coord.lon ?? coord.lng ?? coord.x;
-          lat = coord.lat ?? coord.y;
-        }
-
-        if (lat === undefined || lon === undefined) {
-          console.warn("[FieldReport] invalid coord from server:", coordData);
-          return;
-        }
-
-        // Use env key here (client-side). For security, prefer calling your own server route
-        // that uses the secret key and forwards a sanitized weather response.
-        const openWeatherKey = "556670b48ccab73ece536515735bedbf";
-
-        // Current weather
-        const weatherRes = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(
-            lat
-          )}&lon=${encodeURIComponent(lon)}&appid=${encodeURIComponent(
-            openWeatherKey
-          )}&units=metric`
-        );
-
-        if (!weatherRes.ok) {
-          console.warn(
-            "[FieldReport] OpenWeather current weather failed",
-            weatherRes.status
-          );
-          return;
-        }
-        const weatherData = await weatherRes.json();
-
-        // Hourly forecast (note: free OpenWeather does not expose pro/hourly endpoint;
-        // you might want to use One Call API / forecast endpoint instead)
-        const forecastRes = await fetch(
-          `https://api.openweathermap.org/data/2.5/forecast?lat=${encodeURIComponent(
-            lat
-          )}&lon=${encodeURIComponent(lon)}&appid=${encodeURIComponent(
-            openWeatherKey
-          )}&units=metric`
-        );
-
-        let forecastData: any = {};
-        if (forecastRes.ok) {
-          forecastData = await forecastRes.json();
-        } else {
-          console.warn(
-            "[FieldReport] forecast fetch failed",
-            forecastRes.status
-          );
-        }
-
-        // set state
-        setWeather(weatherData);
-        setForecast(forecastData.list?.slice(0, 3) || []); // take next 3 periods
-      } catch (err) {
-        console.error("Weather fetch error:", err);
+      if (!coordRes.ok) {
+        console.warn("[FieldReport] coord endpoint failed:", coordRes.status);
+        return;
       }
-    };
 
-    fetchWeather();
-  }, []);
+      const coordData = await coordRes.json();
+      const coord = coordData?.coord || coordData?.location || null;
+
+      let lon: number | undefined;
+      let lat: number | undefined;
+
+      if (Array.isArray(coord)) {
+        [lon, lat] = coord;
+      } else if (coord && typeof coord === "object") {
+        lon = coord.lon ?? coord.lng ?? coord.x;
+        lat = coord.lat ?? coord.y;
+      }
+
+      if (lat === undefined || lon === undefined) {
+        console.warn("[FieldReport] invalid coord from server:", coordData);
+        return;
+      }
+
+      // 🔑 Hardcoded API key (you can move this to .env)
+      const openWeatherKey = "556670b48ccab73ece536515735bedbf";
+
+      // Current weather
+      const weatherRes = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${openWeatherKey}&units=metric`
+      );
+
+      if (!weatherRes.ok) {
+        console.warn("[FieldReport] OpenWeather current weather failed", weatherRes.status);
+        return;
+      }
+      const weatherData = await weatherRes.json();
+
+      // Forecast
+      const forecastRes = await fetch(
+        `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${openWeatherKey}&units=metric`
+      );
+
+      let forecastData: any = {};
+      if (forecastRes.ok) {
+        forecastData = await forecastRes.json();
+      } else {
+        console.warn("[FieldReport] forecast fetch failed", forecastRes.status);
+      }
+
+      setWeather(weatherData);
+      setForecast(forecastData.list?.slice(0, 3) || []);
+    } catch (err) {
+      console.error("Weather fetch error:", err);
+    }
+  };
+
+  fetchWeather();
+}, []);
+
 
   //Crop Health
   useEffect(() => {
@@ -219,10 +207,7 @@ const getSoilAdvice = () => {
                       Health Score
                     </div>
                   </div>
-                  <div className="text-center p-2 bg-white rounded shadow">
-                    <div className="text-2xl font-bold text-secondary">1.2</div>
-                    <div className="text-sm text-muted-foreground">Stress</div>
-                  </div>
+                  
                 </div>
               </div>
 
@@ -249,7 +234,7 @@ const getSoilAdvice = () => {
 
         {/* Left Column: Field Summary (EEData) full height */}
         <div className="flex flex-col space-y-4 h-[calc(100vh-96px)]">
-          <EEData/>
+          <EEData />
         </div>
 
         {/* Right Column */}
@@ -308,84 +293,96 @@ const getSoilAdvice = () => {
 
           {/* Soil Health / Fertilizer below Weather */}
           <Card>
-  <CardHeader>
-    <CardTitle className="flex items-center text-lg font-semibold">
-      <Beaker className="mr-2 h-5 w-5" />
-      Soil Health & Fertilizer Input
-    </CardTitle>
-  </CardHeader>
-  <CardContent>
-    {!soilSubmitted ? (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          {["N", "P", "K", "pH"].map((key) => (
-            <div key={key} className="flex flex-col">
-              <label className="text-sm font-medium text-muted-foreground">
-                {key} Value
-              </label>
-              <input
-                type="number"
-                name={key}
-                value={(soilInputs as any)[key]}
-                onChange={handleSoilChange}
-                className="border rounded px-2 py-1"
-                placeholder={`Enter ${key}`}
-                step={key === "pH" ? "0.1" : "1"}
-              />
-            </div>
-          ))}
-        </div>
-        <Button
-          onClick={handleSoilSubmit}
-          className="bg-primary text-white hover:bg-primary/90"
-        >
-          Submit
-        </Button>
-      </div>
-    ) : (
-      <div className="space-y-4">
-        {/* Display all 4 values in a single row */}
-        <div className="flex justify-between gap-4 text-center">
-          <div className="flex-1 p-3 bg-primary/10 rounded-lg">
-            <div className="text-lg font-bold text-primary">{soilInputs.pH}</div>
-            <div className="text-xs text-muted-foreground">pH</div>
-          </div>
-          <div className="flex-1 p-3 bg-secondary/10 rounded-lg">
-            <div className="text-lg font-bold text-secondary">{soilInputs.N}</div>
-            <div className="text-xs text-muted-foreground">N (kg/ha)</div>
-          </div>
-          <div className="flex-1 p-3 bg-accent/10 rounded-lg">
-            <div className="text-lg font-bold text-accent">{soilInputs.P}</div>
-            <div className="text-xs text-muted-foreground">P (kg/ha)</div>
-          </div>
-          <div className="flex-1 p-3 bg-amber-10 rounded-lg">
-            <div className="text-lg font-bold text-amber-700">{soilInputs.K}</div>
-            <div className="text-xs text-muted-foreground">K (kg/ha)</div>
-          </div>
-        </div>
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg font-semibold">
+                <Beaker className="mr-2 h-5 w-5" />
+                Soil Health & Fertilizer Input
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!soilSubmitted ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    {["N", "P", "K", "pH"].map((key) => (
+                      <div key={key} className="flex flex-col">
+                        <label className="text-sm font-medium text-muted-foreground">
+                          {key} Value
+                        </label>
+                        <input
+                          type="number"
+                          name={key}
+                          value={(soilInputs as any)[key]}
+                          onChange={handleSoilChange}
+                          className="border rounded px-2 py-1"
+                          placeholder={`Enter ${key}`}
+                          step={key === "pH" ? "0.1" : "1"}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    onClick={handleSoilSubmit}
+                    className="bg-primary text-white hover:bg-primary/90"
+                  >
+                    Submit
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Display all 4 values in a single row */}
+                  <div className="flex justify-between gap-4 text-center">
+                    <div className="flex-1 p-3 bg-primary/10 rounded-lg">
+                      <div className="text-lg font-bold text-primary">
+                        {soilInputs.pH}
+                      </div>
+                      <div className="text-xs text-muted-foreground">pH</div>
+                    </div>
+                    <div className="flex-1 p-3 bg-secondary/10 rounded-lg">
+                      <div className="text-lg font-bold text-secondary">
+                        {soilInputs.N}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        N (kg/ha)
+                      </div>
+                    </div>
+                    <div className="flex-1 p-3 bg-accent/10 rounded-lg">
+                      <div className="text-lg font-bold text-accent">
+                        {soilInputs.P}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        P (kg/ha)
+                      </div>
+                    </div>
+                    <div className="flex-1 p-3 bg-amber-10 rounded-lg">
+                      <div className="text-lg font-bold text-amber-700">
+                        {soilInputs.K}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        K (kg/ha)
+                      </div>
+                    </div>
+                  </div>
 
-        {/* Advice Section */}
-        <div className="p-4 bg-yellow-50 rounded-lg">
-          <h4 className="text-sm font-semibold mb-2">Advice:</h4>
-          <ul className="list-disc pl-5 text-sm text-muted-foreground">
-            {getSoilAdvice().map((a, idx) => (
-              <li key={idx}>{a}</li>
-            ))}
-          </ul>
-        </div>
+                  {/* Advice Section */}
+                  <div className="p-4 bg-yellow-50 rounded-lg">
+                    <h4 className="text-sm font-semibold mb-2">Advice:</h4>
+                    <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                      {getSoilAdvice().map((a, idx) => (
+                        <li key={idx}>{a}</li>
+                      ))}
+                    </ul>
+                  </div>
 
-        <Button
-          onClick={() => setSoilSubmitted(false)}
-          className="bg-gray-200 hover:bg-gray-300"
-        >
-          Edit
-        </Button>
-      </div>
-    )}
-  </CardContent>
-</Card>
-
-
+                  <Button
+                    onClick={() => setSoilSubmitted(false)}
+                    className="bg-gray-200 hover:bg-gray-300"
+                  >
+                    Edit
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

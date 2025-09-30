@@ -3,12 +3,12 @@ export const translations = {
     // Navigation
     field_report: "Field Report",
     my_field: "My Field",
-    data_analytics: "Data Analytics",
+    data_analytics: "Income and Sustainability",
     language: "Language",
     farmer: "Farmer",
     online: "Online",
-    field_log: "Field Log",
-    pest: "Pest",
+    field_log: "Event Log Calender",
+    pest: "Pest Section",
 
     // Field Report
     ai_analysis: "AI review from the retrieved data and stats",
