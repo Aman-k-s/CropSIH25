@@ -120,16 +120,16 @@ class CarbonCredit(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        ndwi_data=fetchEEData(request.user)['ndwi_time_series']
+        # ndwi_data=fetchEEData(request.user)['ndwi_time_series']
         # awd.py
-        awd = detect_awd_from_ndwi(ndwi_series=ndwi_data)["awd_detected"]
+        # awd = detect_awd_from_ndwi(ndwi_series=ndwi_data)["awd_detected"]
 
         polygon = get_polygon(user=request.user)
         # utils.py
         area = calculate_area_in_hectares(polygon['coordinates'][0])
 
         # cc.py
-        result = calculate_carbon_metrics(area_hectare=area)
+        result = calculate_carbon_metrics(area_hectare=area, ndwi_based_awd=True)
         return Response(result)
     
 class PestPrediction(APIView):

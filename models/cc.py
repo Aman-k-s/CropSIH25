@@ -1,5 +1,5 @@
 def calculate_carbon_metrics(area_hectare: float,
-                             ndwi_based_awd: True,
+                             ndwi_based_awd: bool,
                              crop_days: int = 100,
                              baseline_water_mm: float = 1200,
                              ch4_baseline_per_day: float = 1.3,

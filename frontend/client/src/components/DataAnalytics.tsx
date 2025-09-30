@@ -144,7 +144,7 @@ export function DataAnalytics() {
               <div className="p-4 bg-green-50 rounded-lg flex flex-col items-center justify-center shadow-sm hover:shadow-md transition">
                 <p className="text-sm text-muted-foreground">AWD Status</p>
                 <p className="text-xl font-bold text-green-700">
-                  {awd_detected ? "Detected" : "Not Detected"}
+                  {awd_detected ? "Not Detected" : "Detected"}
                 </p>
               </div>
 
