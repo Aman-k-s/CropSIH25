@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Smart Farmer Voice Assistant (Rice MRV)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width:800px; margin:0 auto; }
+    h2 { margin-top: 0; }
+    #question { font-size: 20px; margin: 18px 0; min-height:48px; }
+    #output { font-size: 16px; color:#333; margin-top:6px; }
+    #summary { margin-top: 14px; font-size:16px; background:#f6f9fb;padding:12px;border-radius:8px; }
+    #jsonOutput pre { white-space:pre-wrap; word-break:break-word; }
+    button { font-size:16px; padding:10px 16px; margin:8px; }
+    .hint { color:#777; font-size:13px; margin-top:6px;}
+    .error{ color:crimson; font-weight:600; }
+  </style>
+</head>
+<body>
+  <h2>🌾 Smart Farmer Voice Assistant — Rice MRV (Demo)</h2>
+  <p class="hint">👉 First select language (English / Hindi). Then click Start and answer the questions in that language. JSON output (in English) is shown for backend.</p>
+
+  <div>
+    <label>Select language:</label>
+    <button onclick="setLanguage('en')">🇬🇧 English</button>
+    <button onclick="setLanguage('hi')">🇮🇳 Hindi</button>
+  </div>
+
+  <div id="question">Please select a language to begin.</div>
+  <button id="startBtn">🎤 Start</button>
+  <button id="retryBtn" style="display:none">🔁 Retry current question</button>
+  <div id="output">Transcript: <span id="transcriptText">—</span></div>
+  <div id="status" class="hint"></div>
+
+  <div id="summary" style="display:none"></div>
+
+  <div id="jsonOutput" style="display:none">
+    <h4>JSON for backend (English)</h4>
+    <pre id="jsonPre">{}</pre>
+  </div>
+
+  <script>
+  // ======= Questions =======
+  const questions_en = [
+    { key: "crop", text: "Which crop are you growing?" },
+    { key: "fertilizer", text: "Which fertilizer did you use?" },
+    { key: "water_cycle", text: "How many days did you keep water in the field?" }
+  ];
+  const questions_hi = [
+    { key: "crop", text: "आप कौन सी फसल उगा रहे हैं?" },
+    { key: "fertilizer", text: "आपने कौन सा उर्वरक इस्तेमाल किया?" },
+    { key: "water_cycle", text: "आपने खेत में कितने दिन पानी रखा?" }
+  ];
+
+  // ======= Normalization Map =======
+  const translationMap = {
+    "धान": "Rice", "चावल": "Rice", "chawal": "Rice", "dhaan": "Rice", "dhan": "Rice", "rice": "Rice",
+    "गेहूं": "Wheat", "गेहुं": "Wheat", "gehu": "Wheat", "wheat": "Wheat",
+    "यूरिया": "Urea", "urea":"Urea",
+    "डीएपी": "DAP", "dap":"DAP", "d.a.p":"DAP",
+    "npk":"NPK", "एनपीके":"NPK"
+  };
+
+  const hindiNumberWords = { "एक":1,"दो":2,"तीन":3,"चार":4,"पांच":5,"पाँच":5,"छह":6,"सात":7,"आठ":8,"नौ":9,"दस":10,
+    "ek":1,"do":2,"teen":3,"char":4,"chaar":4,"paanch":5,"panch":5,"chhe":6,"saat":7,"aath":8,"nau":9,"das":10 };
+
+  function toLowerTrim(s){ return s? s.toString().trim().toLowerCase() : ""; }
+
+  function findMapping(text){
+    if(!text) return null;
+    const lower = toLowerTrim(text);
+    if(translationMap[lower]) return translationMap[lower];
+    for(const k of Object.keys(translationMap)){
+      if(lower.includes(k.toLowerCase())) return translationMap[k];
+    }
+    return null;
+  }
+
+  function parseNumberFromText(text){
+    if(!text) return null;
+    const m = text.match(/\d+/);
+    if(m) return parseInt(m[0],10);
+    const tokens = text.toLowerCase().split(/\s+/);
+    for(const tok of tokens){ if(hindiNumberWords[tok]) return hindiNumberWords[tok]; }
+    return null;
+  }
+
+  function listenOnce(lang, timeoutMs=10000){
+    return new Promise((resolve, reject) => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if(!SpeechRecognition) return reject(new Error("SpeechRecognition not supported"));
+      const rec = new SpeechRecognition();
+      rec.lang = lang;
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      rec.onresult = ev => resolve(ev.results[0][0].transcript.trim());
+      rec.onerror = ev => reject(new Error(ev.error));
+      rec.onend = () => reject(new Error("No speech detected"));
+      rec.start();
+      setTimeout(()=>{ try{rec.stop();}catch{} }, timeoutMs);
+    });
+  }
+
+  let currentQ = 0, languageMode = null;
+  const displayAnswers = { crop:"",fertilizer:"",water_cycle:"" };
+  const englishAnswers = { crop:"",fertilizer:"",water_cycle:"" };
+
+  const startBtn=document.getElementById("startBtn");
+  const questionDiv=document.getElementById("question");
+  const transcriptSpan=document.getElementById("transcriptText");
+  const statusDiv=document.getElementById("status");
+  const summaryDiv=document.getElementById("summary");
+  const jsonPre=document.getElementById("jsonPre");
+  const jsonDiv=document.getElementById("jsonOutput");
+
+  function showStatus(msg,isError=false){statusDiv.textContent=msg;statusDiv.className=isError?"error":"hint";}
+
+  function resetFlow(){
+    currentQ=0;
+    Object.keys(displayAnswers).forEach(k=>displayAnswers[k]="");
+    Object.keys(englishAnswers).forEach(k=>englishAnswers[k]="");
+    transcriptSpan.textContent="—";summaryDiv.style.display="none";jsonDiv.style.display="none";
+    startBtn.disabled=false;showStatus("");
+    questionDiv.textContent="Please select a language to begin.";
+  }
+
+  function setLanguage(lang){
+    languageMode = lang;
+    showStatus("Language set to " + (lang==="en"?"English":"Hindi"));
+    questionDiv.textContent="Press Start to begin (" + (lang==="en"?"English":"Hindi") + ")";
+  }
+
+  async function runFlow(){
+    if(!languageMode){
+      alert("Please select a language first!");
+      return;
+    }
+    try {
+      for(currentQ=0; currentQ<questions_en.length; currentQ++){
+        const q=(languageMode==="en"?questions_en:questions_hi)[currentQ];
+        questionDiv.textContent=q.text;
+        showStatus("Listening...");
+        const transcript=await listenOnce(languageMode==="en"?"en-US":"hi-IN",10000);
+        transcriptSpan.textContent=transcript;
+        processAndStoreAnswer(transcript);
+      }
+      showSummaryAndJson();
+    } catch(e){ showStatus("Error: "+e.message,true);}
+  }
+
+  function processAndStoreAnswer(transcript){
+    const qKey=questions_en[currentQ].key;
+    displayAnswers[qKey]=transcript;
+    let mapped=findMapping(transcript);
+    if(qKey==="water_cycle"){
+      const num=parseNumberFromText(transcript);
+      englishAnswers[qKey]=num?`${num} days`:mapped||transcript;
+    } else {
+      englishAnswers[qKey]=mapped||normalizeToTitle(transcript);
+    }
+    console.log("Processed:", transcript,"=>",englishAnswers[qKey]);
+  }
+
+  function normalizeToTitle(text){
+    return text? text.trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" "):"";
+  }
+
+  function showSummaryAndJson(){
+    if(languageMode === "en"){
+      summaryDiv.innerHTML = `
+        <b>Summary (English)</b><br>
+        Crop: ${displayAnswers.crop} <br>
+        Fertilizer: ${displayAnswers.fertilizer} <br>
+        Water Cycle: ${displayAnswers.water_cycle}
+      `;
+    } else {
+      summaryDiv.innerHTML = `
+        <b>सारांश (Hindi)</b><br>
+        फसल: ${displayAnswers.crop} <br>
+        उर्वरक: ${displayAnswers.fertilizer} <br>
+        पानी चक्र: ${displayAnswers.water_cycle}
+      `;
+    }
+    summaryDiv.style.display = "block";
+
+    const jsonString = JSON.stringify(englishAnswers, null, 2);
+    jsonPre.textContent = jsonString;
+    jsonDiv.style.display = "block";
+  }
+
+  startBtn.onclick=()=>{resetFlow();runFlow();};
+  resetFlow();
+  </script>
+</body>
+</html>
