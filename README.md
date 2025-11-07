@@ -1,6 +1,5 @@
 # KrishiSakhi
 
----
 This project has a **separate frontend and backend** setup:
 
 * **Frontend**: React app
