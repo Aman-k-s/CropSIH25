@@ -1,5 +1,4 @@
-# CropSIH25
-## KrishiSaarthi
+# KrishiSakhi
 
 ---
 This project has a **separate frontend and backend** setup:
